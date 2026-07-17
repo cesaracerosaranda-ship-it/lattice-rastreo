@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Seguimiento de producción · Lattice Works</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#1A1A1A; --card:#232323; --line:#3a3a3a; --gold:#BDA76C; --txt:#f2f2f2; --txt2:#cfcfcf; --txt4:#8a8a8a; --green:#4ade80; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--txt); font-family: 'Manrope', sans-serif; min-height: 100vh; }
+  header { background: var(--card); border-bottom: 2px solid var(--gold); padding: 18px 16px; text-align: center; }
+  header .lw { color: var(--gold); font-weight: 800; letter-spacing: .34em; font-size: 15px; }
+  header .sub { color: var(--txt4); font-size: 10px; margin-top: 4px; letter-spacing: .08em; }
+  main { max-width: 460px; margin: 0 auto; padding: 22px 16px 40px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 14px; }
+  .folio { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 12px; letter-spacing: .08em; }
+  .nombre { font-size: 19px; font-weight: 800; margin-top: 6px; }
+  .empresa { color: var(--txt4); font-size: 12px; margin-top: 2px; }
+  .meta { display: flex; gap: 18px; justify-content: center; margin-top: 12px; color: var(--txt2); font-size: 11px; flex-wrap: wrap; }
+  .meta b { color: var(--txt); }
+  .estado { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; border: 1px solid var(--gold); color: var(--gold); border-radius: 8px; padding: 7px 14px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .1em; }
+  .estado.done { border-color: var(--green); color: var(--green); }
+  .center { text-align: center; }
+  .prog { height: 6px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 16px; }
+  .prog .bar { height: 100%; background: var(--gold); border-radius: 4px; transition: width .4s ease; }
+  .pasos { display: flex; flex-direction: column; gap: 0; margin-top: 14px; }
+  .paso { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; position: relative; }
+  .paso .pin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); background: var(--bg); flex: none; z-index: 1; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--bg); }
+  .paso.on .pin { background: var(--gold); border-color: var(--gold); }
+  .paso.now .pin { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(189,167,108,.18); }
+  .paso:not(:last-child)::after { content: ''; position: absolute; left: 7px; top: 26px; bottom: -8px; width: 2px; background: var(--line); }
+  .paso.on:not(:last-child)::after { background: var(--gold); }
+  .paso .pl { font-size: 12px; color: var(--txt4); padding-top: 1px; }
+  .paso.on .pl { color: var(--txt); }
+  .paso.now .pl { color: var(--gold); font-weight: 700; }
+  .sec { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .16em; margin-bottom: 10px; }
+  .ev { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .ev:last-child { border-bottom: 0; }
+  .ev .d { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); white-space: nowrap; padding-top: 2px; }
+  .ev .t { font-size: 11.5px; color: var(--txt2); }
+  .err { text-align: center; padding: 60px 20px; color: var(--txt4); }
+  .err h2 { color: var(--txt); font-size: 16px; margin-bottom: 8px; }
+  footer { text-align: center; color: var(--txt4); font-size: 9px; padding: 18px; letter-spacing: .04em; }
+  .skel { text-align: center; color: var(--txt4); padding: 60px 0; font-size: 12px; }
+</style>
+</head>
+<body>
+<header><div class="lw">LATTICE WORKS</div><div class="sub">SEGUIMIENTO DE PRODUCCIÓN</div></header>
+<main id="app"><div class="skel">Cargando tu pedido…</div></main>
+<footer>ventas@latticeworks.mx · Tel: +52 81-3475-0104 · Monterrey, NL</footer>
+
+<script src="./rastreo-config.js"></script>
+<script>
+/* Página PÚBLICA: el cliente rastrea su pedido con el link/token que le
+   compartimos desde Producción. Solo estado y avance — cero precios ni
+   datos internos (regla de vista cliente). Datos vía RPC get_rastreo_ot
+   (SECURITY DEFINER validado por token) — el anon key solo puede eso. */
+const PASOS = [
+  { key: 'pendiente', label: 'Orden recibida' },
+  { key: 'en_proceso', label: 'En proceso de corte' },
+  { key: 'pausada', label: 'En pausa' },
+  { key: 'terminada', label: 'Corte terminado' },
+  { key: 'acabado', label: 'Doblez y pintura' },
+  { key: 'entregada', label: 'Entregado' },
+];
+// la pausa no es un "paso" del viaje; doblez/pintura solo si el pedido lo lleva
+const visibles = conAcabado => PASOS.filter(p => p.key !== 'pausada' && (p.key !== 'acabado' || conAcabado));
+
+const $app = document.getElementById('app');
+const err = (t, m) => { $app.innerHTML = `<div class="err"><h2>${t}</h2><p>${m}</p></div>`; };
+const fmtF = s => s ? new Date(s).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : null;
+
+(async function () {
+  const token = new URLSearchParams(location.search).get('t');
+  const demo = new URLSearchParams(location.search).has('demo');
+  if (!demo && (!token || typeof RASTREO_CFG === 'undefined' || !RASTREO_CFG.url)) {
+    return err('Esta orden no está disponible', 'El enlace no es válido o el seguimiento no está configurado. Contacta a Lattice Works.');
+  }
+  let data = null;
+  if (demo) {
+    data = { ot: { folio_ot: 'OT-LW-2026-0155', estado: 'en_proceso', fecha_compromiso: '2026-07-25', cliente: 'Kato Gutierrez', empresa: '', piezas: 28, material: 'acero C16', tiene_acabado: true, updated_at: new Date().toISOString() },
+      eventos: [ { de: 'pendiente', a: 'en_proceso', created_at: new Date().toISOString() }, { de: null, a: 'pendiente', created_at: new Date(Date.now() - 864e5).toISOString() } ] };
+  } else {
+    try {
+      const r = await fetch(RASTREO_CFG.url.replace(/\/+$/, '') + '/rest/v1/rpc/get_rastreo_ot', {
+        method: 'POST',
+        headers: { apikey: RASTREO_CFG.anonKey, Authorization: 'Bearer ' + RASTREO_CFG.anonKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_token: token }),
+      });
+      data = r.ok ? await r.json() : null;
+    } catch (e) { data = null; }
+  }
+  if (!data || !data.ot) {
+    return err('Esta orden no está disponible', 'El enlace de seguimiento no existe o fue desactivado. Contacta a tu proveedor para más información.');
+  }
+  const ot = data.ot, evs = data.eventos || [];
+  const pausada = ot.estado === 'pausada';
+  const VIS = visibles(!!ot.tiene_acabado);
+  const idxViaje = VIS.findIndex(p => p.key === (pausada ? 'en_proceso' : ot.estado));
+  const done = ot.estado === 'entregada';
+  const compromiso = fmtF(ot.fecha_compromiso);
+
+  $app.innerHTML = `
+    <div class="card center">
+      <div class="folio">${ot.folio_ot}</div>
+      <div class="nombre">${ot.cliente || ''}</div>
+      ${ot.empresa ? `<div class="empresa">${ot.empresa}</div>` : ''}
+      <div class="meta">
+        ${ot.piezas > 0 ? `<span><b>${ot.piezas}</b> piezas</span>` : ''}
+        ${ot.material ? `<span>${ot.material}</span>` : ''}
+        ${compromiso ? `<span>entrega estimada: <b>${compromiso}</b></span>` : ''}
+      </div>
+      <div class="estado ${done ? 'done' : ''}">${done ? '✓' : '◷'} ${pausada ? 'EN PAUSA TEMPORAL' : (VIS[idxViaje] ? VIS[idxViaje].label.toUpperCase() : ot.estado.toUpperCase())}</div>
+      <div class="prog"><div class="bar" style="width:${((idxViaje + 1) / VIS.length * 100).toFixed(0)}%"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="sec">AVANCE DE TU PEDIDO</div>
+      <div class="pasos">
+        ${VIS.map((p, i) => `<div class="paso ${i < idxViaje ? 'on' : ''} ${i === idxViaje ? 'on now' : ''}">
+          <span class="pin">${i < idxViaje ? '✓' : ''}</span><span class="pl">${p.label}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    ${evs.length ? `<div class="card">
+      <div class="sec">HISTORIAL</div>
+      ${evs.map(e => {
+        const lbl = e.de ? `${(PASOS.find(x => x.key === e.a) || { label: e.a }).label}` : 'Orden recibida';
+        return `<div class="ev"><span class="d">${new Date(e.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span><span class="t">${lbl}</span></div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+})();
+</script>
+</body>
+</html>
