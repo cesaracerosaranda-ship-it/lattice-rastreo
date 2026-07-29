@@ -7,12 +7,14 @@
 <meta name="robots" content="noindex" />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#161616; --card:#1F1F1F; --card2:#191919; --line:#333; --gold:#BDA76C; --txt:#f2f2f2; --txt2:#cfcfcf; --txt4:#8a8a8a; --green:#4ade80; }
+  /* mismos tokens que el ERP (simulador-v3.css) — homogeneidad total de marca */
+  :root { --bg:#121212; --card:#1B1B1B; --card2:#161616; --line:#2c2c2c; --gold:#BDA76C; --txt:#fff; --txt2:#CFCFCF; --txt4:#8f8f8f; --green:#4ade80; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--txt); font-family: 'Manrope', sans-serif; min-height: 100vh; }
-  header { background: var(--card); border-bottom: 2px solid var(--gold); padding: 18px 16px; text-align: center; }
+  header { background: var(--card); border-bottom: 2px solid var(--gold); padding: 16px; text-align: center; }
+  header img { height: 30px; display: block; margin: 0 auto; }
   header .lw { color: var(--gold); font-weight: 800; letter-spacing: .34em; font-size: 15px; }
-  header .sub { color: var(--txt4); font-size: 10px; margin-top: 4px; letter-spacing: .08em; }
+  header .sub { color: var(--txt4); font-size: 9.5px; margin-top: 6px; letter-spacing: .18em; font-family: 'JetBrains Mono', monospace; }
   main { max-width: 480px; margin: 0 auto; padding: 22px 16px 30px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 14px; }
   .folio { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 12px; letter-spacing: .08em; }
@@ -69,7 +71,7 @@
 </style>
 </head>
 <body>
-<header><div class="lw">LATTICE WORKS</div><div class="sub">SEGUIMIENTO DE PRODUCCIÓN</div></header>
+<header><img src="assets/logo-lattice-topbar.png" alt="LATTICE WORKS" onerror="this.outerHTML='<div class=&quot;lw&quot;>LATTICE WORKS</div>'"><div class="sub">SEGUIMIENTO DE PRODUCCIÓN</div></header>
 <main id="app"><div class="skel">Cargando tu pedido…</div></main>
 <div class="live" id="live"></div>
 <footer>ventas@latticeworks.mx · Tel: +52 81-3475-0104 · Monterrey, NL</footer>
