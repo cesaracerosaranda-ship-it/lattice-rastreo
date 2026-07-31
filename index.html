@@ -68,6 +68,13 @@
   @keyframes lat { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
   footer { text-align: center; color: var(--txt4); font-size: 9px; padding: 14px 16px 22px; letter-spacing: .04em; }
   .skel { text-align: center; color: var(--txt4); padding: 60px 0; font-size: 12px; }
+  .corte-av { margin: 12px 0 4px; }
+  .corte-av .ca-bar { height: 8px; border-radius: 999px; background: rgba(0,0,0,.07); overflow: hidden; }
+  .corte-av .ca-bar > div { height: 100%; background: linear-gradient(90deg, #BDA76C, #D9C48E); border-radius: 999px; transition: width .5s ease; }
+  .corte-av .ca-txt { font-size: 12.5px; color: #6B6B6B; margin-top: 7px; }
+  .corte-av .ca-txt b { color: #8A7233; font-size: 15px; }
+  .mat-nota { margin: 12px 0 2px; font-size: 12.5px; line-height: 1.6; color: #6B6B6B;
+    background: #FBF7EC; border: 1px solid rgba(189,167,108,.35); border-radius: 9px; padding: 10px 13px; }
 </style>
 </head>
 <body>
@@ -76,6 +83,11 @@
 <div class="live" id="live"></div>
 <footer>ventas@latticeworks.mx · Tel: +52 81-3475-0104 · Monterrey, NL</footer>
 
+<!-- ./rastreo-config.js, no erp/… : el sitio publico (rastreo.latticeworks.mx)
+     NO publica el arbol del repo — tiene esta pagina como index.html y el
+     config a un lado. Antes habia que corregir esta linea A MANO en cada
+     despliegue, y es justo el paso que se olvida. Asi el archivo se copia
+     verbatim. (Verificado contra produccion el 31-jul.) -->
 <script src="./rastreo-config.js"></script>
 <script>
 /* Página PÚBLICA (Rastreo 2.0): el cliente ve su pedido EN VIVO — estado,
@@ -144,8 +156,29 @@ function pintar(data) {
       <div class="folio">${esc(ot.folio_ot)}</div>
       <div class="nombre">${esc(ot.cliente || '')}</div>
       ${ot.empresa ? `<div class="empresa">${esc(ot.empresa)}</div>` : ''}
-      <div class="estado ${done ? 'done' : ''}">${done ? '✓' : '◷'} ${pausada ? 'EN PAUSA TEMPORAL' : (VIS[idxViaje] ? VIS[idxViaje].label.toUpperCase() : esc(ot.estado).toUpperCase())}</div>
-      <div class="prog"><div class="bar" style="width:${((idxViaje + 1) / VIS.length * 100).toFixed(0)}%"></div></div>
+      <div class="estado ${done ? 'done' : ''}">${done ? '✓' : '◷'} ${pausada ? 'EN PAUSA TEMPORAL' : (
+        // En CORTE el estado dice el avance real, que es lo concreto. En las
+        // demás etapas basta el nombre. (Idea de César 31-jul: "que el cliente
+        // tenga una noción del porcentaje cortado y lo que falta".)
+        (ot.estado === 'en_proceso' && ot.piezas > 0 && ot.piezas_cortadas > 0)
+          ? `CORTANDO · ${ot.piezas_cortadas} DE ${ot.piezas} PIEZAS`
+          : (ot.estado === 'pendiente' && !ot.material_ok)
+            ? (ot.material_pedido ? 'PREPARANDO EL MATERIAL' : 'EN COLA DE PRODUCCIÓN')
+            : (VIS[idxViaje] ? VIS[idxViaje].label.toUpperCase() : esc(ot.estado).toUpperCase()))}</div>
+      ${(ot.estado === 'en_proceso' || ot.estado === 'pausada') && ot.piezas > 0 && ot.piezas_cortadas > 0 ? `
+      <div class="corte-av">
+        <div class="ca-bar"><div style="width:${Math.min(100, Math.round(ot.piezas_cortadas / ot.piezas * 100))}%"></div></div>
+        <div class="ca-txt"><b>${ot.piezas_cortadas}</b> de ${ot.piezas} piezas cortadas · faltan ${Math.max(0, ot.piezas - ot.piezas_cortadas)}</div>
+      </div>` : ''}
+      ${ot.estado === 'pendiente' && !ot.material_ok && ot.material_pedido ? `
+      <div class="mat-nota">📦 Estamos esperando que llegue el material de tu pedido. En cuanto esté en piso arranca el corte.</div>` : ''}
+      ${/* Dos barras apiladas confunden: la de piezas y la del viaje miden cosas
+            distintas y el cliente no tiene cómo saberlo. Cuando hay avance de
+            corte manda esa, que es la concreta; el viaje ya se ve completo en la
+            línea de tiempo de abajo. */
+        ((ot.estado === 'en_proceso' || ot.estado === 'pausada') && ot.piezas > 0 && ot.piezas_cortadas > 0)
+          ? ''
+          : `<div class="prog"><div class="bar" style="width:${((idxViaje + 1) / VIS.length * 100).toFixed(0)}%"></div></div>`}
       ${done ? '<div class="entrega"><b>Tu pedido fue entregado — gracias por confiar en Lattice Works.</b></div>'
         : compromiso ? `<div class="entrega">Entrega estimada: <b>${compromiso}</b>${cd}</div>` : ''}
     </div>
