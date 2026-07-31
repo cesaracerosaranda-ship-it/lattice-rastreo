@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Cotización · Lattice Works</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- El documento guardado usa las clases del ERP. Se enlazan absolutas porque
+     esta página vive en otro host (mismo dueño, sin CORS para CSS). -->
+<link rel="stylesheet" href="https://erp.latticeworks.mx/styles/simulador-v3.css">
+<link rel="stylesheet" href="https://erp.latticeworks.mx/styles/simulador-v4.css">
+<link rel="stylesheet" href="https://erp.latticeworks.mx/styles/simulador-v5.css">
+<style>
+  html, body { background: #F3F1EC; margin: 0; font-family: 'Manrope', sans-serif; }
+  .cot-wrap { max-width: 900px; margin: 0 auto; padding: 22px 16px 60px; }
+  .cot-cab { display: flex; align-items: center; gap: 14px; padding: 6px 4px 18px; flex-wrap: wrap; }
+  .cot-cab img { height: 34px; display: block; }
+  .cot-cab .grow { flex: 1; }
+  .cot-folio { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6B6B6B; letter-spacing: .06em; }
+  .cot-estado { font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    border: 1px solid #BDA76C; color: #8A7233; background: #FBF7EC; border-radius: 20px; padding: 3px 11px; }
+  .cot-estado.acept { border-color: #4E9E6E; color: #2F6B48; background: #EDF7F1; }
+  .cot-doc { background: #fff; border-radius: 12px; box-shadow: 0 2px 22px rgba(0,0,0,.07); overflow: hidden; }
+  /* El documento trae su propio ancho de hoja: aquí se deja fluir */
+  .cot-doc .doc-cliente { width: auto !important; margin: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+  .cot-pie { text-align: center; color: #8A8A8A; font-size: 11.5px; line-height: 1.7; margin-top: 22px; }
+  .cot-pie a { color: #8A7233; }
+  .cot-msg { background: #fff; border-radius: 12px; padding: 46px 24px; text-align: center;
+    color: #4A4A4A; box-shadow: 0 2px 22px rgba(0,0,0,.07); }
+  .cot-msg h2 { font-size: 17px; margin: 0 0 10px; color: #2A2A2A; }
+  .cot-msg p { font-size: 13.5px; line-height: 1.65; margin: 0; color: #6B6B6B; }
+  .cot-imp { display: inline-block; margin-top: 14px; background: #BDA76C; color: #1B1B1B; border: 0;
+    border-radius: 8px; padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  @media print {
+    html, body { background: #fff; }
+    .cot-wrap { max-width: none; padding: 0; }
+    .cot-cab, .cot-pie, .cot-imp { display: none !important; }
+    .cot-doc { box-shadow: none; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="cot-wrap">
+  <div class="cot-cab" id="cab" hidden>
+    <img src="https://erp.latticeworks.mx/assets/logo-lattice-correo.png" alt="Lattice Works">
+    <span class="grow"></span>
+    <span class="cot-folio" id="folio"></span>
+    <span class="cot-estado" id="estado" hidden></span>
+  </div>
+  <div id="cont"><div class="cot-msg"><p>Abriendo la cotización…</p></div></div>
+  <div class="cot-pie" id="pie" hidden>
+    <button class="cot-imp" onclick="window.print()">⎙ Guardar como PDF</button><br><br>
+    Lattice Works · corte láser CNC · Monterrey<br>
+    ¿Dudas? <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a>
+  </div>
+</div>
+
+<!-- Misma config que el rastreo: URL + anon key del proyecto.
+     El anon key es público por diseño; esta página solo puede llamar
+     get_cotizacion_publica con un token válido.
+     RUTA VERIFICADA CONTRA PRODUCCIÓN (31-jul): rastreo.latticeworks.mx sirve
+     ./rastreo-config.js — ese sitio NO publica el árbol del repo, tiene el
+     rastreo como index.html y el config a un lado. Si algún día se sirve desde
+     el repo, hay que copiar erp/rastreo-config.js junto a esta página. -->
+<script src="./rastreo-config.js"></script>
+<script>
+(async () => {
+  const cont = document.getElementById('cont');
+  const msg = (h2, p) => { cont.innerHTML = `<div class="cot-msg"><h2>${h2}</h2><p>${p}</p></div>`; };
+  const token = new URLSearchParams(location.search).get('t');
+
+  if (!window.RASTREO_CFG || !RASTREO_CFG.url || !RASTREO_CFG.anonKey) {
+    msg('Página sin configurar', 'Falta <b>rastreo-config.js</b> junto a esta página. Si eres del equipo de Lattice Works: es el mismo archivo que ya usa el rastreo, va en la raíz de este sitio.');
+    return;
+  }
+  if (!token) { msg('Enlace incompleto', 'Este enlace no trae el código de la cotización. Pídenos uno nuevo a ventas@latticeworks.mx.'); return; }
+
+  let d = null;
+  try {
+    const r = await fetch(RASTREO_CFG.url.replace(/\/+$/, '') + '/rest/v1/rpc/get_cotizacion_publica', {
+      method: 'POST',
+      headers: { apikey: RASTREO_CFG.anonKey, Authorization: 'Bearer ' + RASTREO_CFG.anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_token: token }),
+    });
+    if (r.ok) d = await r.json();
+  } catch (e) { /* sin red */ }
+
+  if (!d || !d.doc) {
+    msg('No encontramos esta cotización',
+      'El enlace puede haber expirado o haberse desactivado. Escríbenos a <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a> y te mandamos uno nuevo.');
+    return;
+  }
+
+  document.title = `Cotización ${d.folio} · Lattice Works`;
+  document.getElementById('folio').textContent = d.folio;
+  document.getElementById('cab').hidden = false;
+  const est = document.getElementById('estado');
+  if (d.estado === 'aceptada') { est.textContent = '✓ Aceptada'; est.className = 'cot-estado acept'; est.hidden = false; }
+  else if (d.estado === 'enviada') { est.textContent = 'Vigente'; est.hidden = false; }
+  cont.innerHTML = `<div class="cot-doc">${d.doc}</div>`;
+  document.getElementById('pie').hidden = false;
+})();
+</script>
+</body>
+</html>
