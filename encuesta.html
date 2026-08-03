@@ -78,6 +78,18 @@
   .estado { text-align: center; font-size: 13.5px; margin-top: 12px; min-height: 20px; line-height: 1.55; }
   .estado.mal { color: #A33; }
 
+  /* ── El asistente: barra de avance + navegación entre preguntas ── */
+  .oculto { display: none; }
+  .prog { display: flex; align-items: center; gap: 12px; margin: 2px 2px 10px; }
+  .prog-bar { flex: 1; height: 5px; background: #E6E1D3; border-radius: 4px; overflow: hidden; }
+  .prog-bar div { height: 100%; background: var(--oro); border-radius: 4px; transition: width .3s ease; }
+  .prog-t { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--oro-hondo);
+    letter-spacing: .1em; white-space: nowrap; }
+  .wiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  .wiz-nav a { font-size: 12.5px; color: var(--suave); text-decoration: none; padding: 6px 2px; }
+  .wiz-nav a:active { color: var(--oro-hondo); }
+  .enviar:disabled { opacity: .45; cursor: default; }
+
   .msg { background: var(--blanco); border-radius: 14px; padding: 42px 24px; text-align: center;
     box-shadow: 0 2px 18px rgba(0,0,0,.06); }
   .msg h2 { font-size: 19px; margin: 0 0 10px; }
@@ -203,74 +215,120 @@
   ];
 
   const R = {};   // respuestas
+  let paso = 0;   // pregunta visible
+  let datosOT = null;
 
-  function pregunta(p) {
-    return `<div class="p" data-p="${p.k}">
-      <div class="p-n">PREGUNTA ${p.n} DE 05</div>
-      <div class="p-q">${p.q}</div>
-      <div class="ops">${p.ops.map(([v, t]) => `
-        <label class="op" data-v="${esc(v)}">
-          <input type="radio" name="${p.k}" value="${esc(v)}"><span class="mk"></span><span>${esc(t)}</span>
-        </label>`).join('')}</div>
-      ${p.cal ? `<div class="sub-q">${p.cal}</div>
-        <div class="cal" data-cal="motivo_cumplio">
-          ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}">${n}</button>`).join('')}
-        </div>
-        <div class="cal-lb"><span>No cumplieron</span><span>Cumplieron de sobra</span></div>` : ''}
-      ${p.txt ? `<label class="op-lb">${esc(p.txt)}</label>
-        <textarea data-txt="${p.txtK}" maxlength="1200" rows="3"></textarea>` : ''}
-    </div>`;
+  /* ── ASISTENTE PASO A PASO (César 2-ago) ──────────────────────────────
+     Antes las 5 preguntas salían todas juntas: "si de primera impresión ven
+     que es una encuesta larga puede que no la contesten". Ahora se ve UNA
+     pregunta y una barra de avance — se lee corto porque ES corto, de una en
+     una. Reglas de avance:
+     · pregunta de pura selección → avanza sola al elegir (nada más que hacer)
+     · pregunta con comentario opcional → botón Continuar, para que quien
+       quiera escribir pueda — y quien no, siga con un clic
+     · siempre se puede regresar (‹ Anterior) o saltar: obligar es la forma
+       más rápida de que la abandonen, media respuesta vale más que ninguna */
+  function pintarFormulario(d) {
+    datosOT = d; paso = 0; pintarPaso();
   }
 
-  function pintarFormulario(d) {
+  function pintarPaso() {
+    const d = datosOT, p = P[paso], ultimo = paso === P.length - 1;
     const quien = d.empresa || d.cliente || '';
-    cont.innerHTML = `
+    const elegido = R[p.k];
+    const pct = Math.round(((paso) / P.length) * 100);
+    const intro = paso === 0 ? `
       <div class="intro">
         <span class="min">⏱ Te toma 2 o 3 minutos</span>
         <h1>¿Cómo nos fue con tu pedido${quien ? `, ${esc(quien.split(' ')[0])}` : ''}?</h1>
-        <p>Son cinco preguntas. No buscamos felicitaciones: queremos saber qué mejorar
-           y en qué parte del proceso te hicimos perder tiempo.</p>
         <p class="franco">Tus respuestas llegan al equipo junto con tu pedido <b>${esc(d.folio_ot)}</b>,
            así que sabemos que son tuyas. Te lo decimos de frente para que respondas con confianza:
            lo que escribas se usa para corregir, nunca para discutir.</p>
+      </div>` : '';
+
+    cont.innerHTML = `${intro}
+      <div class="prog">
+        <div class="prog-bar"><div style="width:${pct}%"></div></div>
+        <span class="prog-t">PREGUNTA ${p.n} DE 05</span>
       </div>
-      ${P.map(pregunta).join('')}
-      <button class="enviar" id="ok">Enviar mis respuestas</button>
-      <div class="estado" id="est"></div>`;
+      <div class="p" data-p="${p.k}">
+        <div class="p-q">${p.q}</div>
+        <div class="ops">${p.ops.map(([v, t]) => `
+          <label class="op ${R[p.k] === v ? 'on' : ''}" data-v="${esc(v)}">
+            <input type="radio" name="${p.k}" value="${esc(v)}"><span class="mk"></span><span>${esc(t)}</span>
+          </label>`).join('')}</div>
+        ${p.cal ? `<div id="cal-wrap" class="${elegido ? '' : 'oculto'}">
+          <div class="sub-q">${p.cal}</div>
+          <div class="cal" data-cal="motivo_cumplio">
+            ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" class="${String(R.motivo_cumplio) === String(n) ? 'on' : ''}">${n}</button>`).join('')}
+          </div>
+          <div class="cal-lb"><span>No cumplieron</span><span>Cumplieron de sobra</span></div>
+        </div>` : ''}
+        ${p.txt ? `<div id="txt-wrap" class="${elegido ? '' : 'oculto'}">
+          <label class="op-lb">${esc(p.txt)}</label>
+          <textarea data-txt="${p.txtK}" maxlength="1200" rows="3">${esc(R[p.txtK] || '')}</textarea>
+        </div>` : ''}
+        ${(p.txt || ultimo) ? `<button class="enviar" id="sig" ${elegido || ultimo ? '' : 'disabled'}>${ultimo ? 'Enviar mis respuestas' : 'Continuar →'}</button>` : ''}
+        <div class="wiz-nav">
+          ${paso ? '<a href="#" id="atras">‹ Anterior</a>' : '<span></span>'}
+          <a href="#" id="saltar">${ultimo ? 'Enviar sin esta respuesta ›' : 'Saltar esta pregunta ›'}</a>
+        </div>
+        <div class="estado" id="est"></div>
+      </div>`;
 
-    // Opciones
-    cont.querySelectorAll('.op').forEach(op => op.addEventListener('click', () => {
-      const caja = op.closest('.p');
-      caja.querySelectorAll('.op').forEach(o => o.classList.remove('on'));
+    /* `avanzo` es el candado: cada pantalla puede avanzar UNA vez. Sin él, el
+       clic en un <label> dispara dos eventos (el real y el sintético del radio
+       que trae adentro) y el auto-avance brincaba una pregunta y enviaba antes
+       de tiempo — lo cachó la suite. De pilón protege el doble-tap del celular. */
+    let avanzo = false;
+    const avanzar = () => {
+      if (paso < P.length - 1) {
+        if (avanzo) return; avanzo = true;
+        paso++; pintarPaso(); window.scrollTo({ top: 0 });
+      } else enviar();   // enviar trae su propia bandera de vuelo (reintentable si falla)
+    };
+
+    cont.querySelectorAll('.op').forEach(op => op.addEventListener('click', ev => {
+      ev.preventDefault();                       // mata el segundo clic sintético del radio
+      cont.querySelectorAll('.op').forEach(o => o.classList.remove('on'));
       op.classList.add('on');
-      R[caja.dataset.p] = op.dataset.v;
+      R[p.k] = op.dataset.v;
+      if (p.cal) {
+        cont.querySelector('#cal-wrap').classList.remove('oculto');           // falta la calificación
+      } else if (p.txt) {
+        cont.querySelector('#txt-wrap').classList.remove('oculto');           // por si quiere contar
+        const b = cont.querySelector('#sig'); if (b) b.disabled = false;
+      } else {
+        setTimeout(avanzar, 280);                                             // nada más que pedir: sigue sola
+      }
     }));
-    // Calificación
     cont.querySelectorAll('.cal button').forEach(b => b.addEventListener('click', () => {
-      const fila = b.closest('.cal');
-      fila.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      cont.querySelectorAll('.cal button').forEach(x => x.classList.remove('on'));
       b.classList.add('on');
-      R[fila.dataset.cal] = b.dataset.n;
+      R.motivo_cumplio = b.dataset.n;
+      setTimeout(avanzar, 280);
     }));
-    // Texto libre
-    cont.querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => {
-      R[t.dataset.txt] = t.value;
-    }));
-
-    cont.querySelector('#ok').addEventListener('click', enviar);
+    cont.querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { R[t.dataset.txt] = t.value; }));
+    cont.querySelector('#sig')?.addEventListener('click', avanzar);
+    cont.querySelector('#atras')?.addEventListener('click', ev => { ev.preventDefault(); paso--; pintarPaso(); });
+    cont.querySelector('#saltar')?.addEventListener('click', ev => { ev.preventDefault(); avanzar(); });
   }
 
+  let enviando = false;   // un solo POST en vuelo, pero reintentable si falla
   async function enviar() {
-    const est = document.getElementById('est'), btn = document.getElementById('ok');
+    if (enviando) return;
+    const est = document.getElementById('est'), btn = document.getElementById('sig');
     /* Nada es obligatorio salvo dar UNA señal: obligar campos en una encuesta
        voluntaria es la forma más rápida de que la abandonen a media página. */
     const dio = ['motivo', 'entrega', 'friccion', 'valor', 'recompra'].some(k => R[k]);
     if (!dio) {
       est.className = 'estado mal';
-      est.textContent = 'Contesta al menos una pregunta y con eso nos ayudas.';
+      est.textContent = 'Contesta al menos una pregunta y con eso nos ayudas — puedes regresar con ‹ Anterior.';
       return;
     }
-    btn.disabled = true; est.className = 'estado'; est.textContent = 'Enviando…';
+    enviando = true;
+    if (btn) btn.disabled = true;
+    est.className = 'estado'; est.textContent = 'Enviando…';
     try {
       const r = await api('guarda_encuesta', { p_token: token, p_datos: R });
       const d = r.ok ? await r.json() : null;
@@ -279,7 +337,8 @@
         'Ya lo tenemos. Lo que nos dijiste lo revisa el equipo, y si hay algo que corregir nos ponemos en contacto contigo.', true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
-      btn.disabled = false;
+      enviando = false;
+      if (btn) btn.disabled = false;
       est.className = 'estado mal';
       est.textContent = 'No se pudo enviar. Revisa tu conexión e inténtalo otra vez, o escríbenos a ventas@latticeworks.mx.';
     }
