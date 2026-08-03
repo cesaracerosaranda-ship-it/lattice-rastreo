@@ -106,6 +106,15 @@
   .wiz-nav a { font-size: 12.5px; color: var(--suave); text-decoration: none; padding: 6px 2px; }
   .wiz-nav a:active { color: var(--oro-hondo); }
   .enviar:disabled { opacity: .45; cursor: default; }
+  .soy { border-top: 1px solid var(--borde); margin-top: 14px; padding-top: 12px;
+    font-size: 12.5px; color: var(--suave); line-height: 1.6; }
+  .soy a { color: var(--oro-hondo); }
+  .soy #soy-caja { display: flex; gap: 8px; margin-top: 9px; }
+  .soy input { flex: 1; min-width: 0; border: 1.5px solid var(--borde); border-radius: 9px;
+    padding: 10px 11px; font-family: inherit; font-size: 14px; background: #fff; color: var(--tinta); }
+  .soy input:focus { outline: none; border-color: var(--oro); }
+  .btn-soy { border: 0; background: var(--oro); color: var(--tinta); border-radius: 9px;
+    padding: 0 15px; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
   .multi-nota { font-size: 12.5px; color: var(--oro-hondo); background: #FBF7EC;
     border: 1px dashed #E4D3AE; border-radius: 8px; padding: 8px 12px; margin: -6px 0 13px; }
   .op.multi .mk { border-radius: 6px; }
@@ -242,6 +251,11 @@
   let paso = 0;   // pregunta visible
   let datosOT = null;
   let dirAnim = 'in';   // hacia dónde entra la carta: avanzar baja, regresar sube
+  /* Quién contesta. Vacío = el contacto principal. Con el CC del correo, un
+     solo enlace lo abren varios (gerencia, compras, dirección), así que el
+     token ya no basta para saber quién es: hay que preguntarlo. Pero sin
+     cobrarle fricción al caso común — el contacto principal no teclea nada. */
+  let quien = '';
 
   /* ── ASISTENTE PASO A PASO (César 2-ago) ──────────────────────────────
      Antes las 5 preguntas salían todas juntas: "si de primera impresión ven
@@ -263,16 +277,26 @@
        social: "¿Cómo nos fue, Carlos?" — no "¿Cómo nos fue, Paran?" (César
        lo vio en la primera prueba). Sin nombre capturado, sin nombre: un
        saludo genérico bien puesto vale más que uno personalizado mal. */
-    const quien = (d.cliente || '').trim();
+    const contacto = (d.cliente || '').trim().split(' ')[0];
+    // El saludo usa a quien de verdad está contestando, si se identificó
+    const saludo = (quien || contacto || '').trim().split(' ')[0];
     const elegido = p.multi ? (R.recompra_todas || []).length > 0 : !!R[p.k];
     const pct = Math.round(((paso) / P.length) * 100);
     const intro = paso === 0 ? `
       <div class="intro">
         <span class="min">⏱ Te toma 2 o 3 minutos</span>
-        <h1>¿Cómo nos fue con tu pedido${quien ? `, ${esc(quien.split(' ')[0])}` : ''}?</h1>
+        <h1>¿Cómo nos fue con tu pedido${saludo ? `, ${esc(saludo)}` : ''}?</h1>
         <p class="franco">Tus respuestas llegan al equipo junto con tu pedido <b>${esc(d.folio_ot)}</b>,
            así que sabemos que son tuyas. Te lo decimos de frente para que respondas con confianza:
            lo que escribas se usa para corregir, nunca para discutir.</p>
+        <div class="soy">${quien
+          ? `Contestas como <b>${esc(quien)}</b>. <a href="#" id="soy-otro">cambiar</a>`
+          : (contacto ? `¿No eres ${esc(contacto)}? <a href="#" id="soy-otro">Dinos quién nos contesta</a>` : `<a href="#" id="soy-otro">¿Nos dices tu nombre?</a>`)}
+          <div id="soy-caja" class="oculto">
+            <input id="soy-nombre" maxlength="80" placeholder="Tu nombre y área — ej. Ana Ruiz, compras" value="${esc(quien)}">
+            <button type="button" class="btn-soy" id="soy-ok">Listo</button>
+          </div>
+        </div>
       </div>` : '';
 
     cont.innerHTML = `${intro}
@@ -360,6 +384,20 @@
     cont.querySelector('#sig')?.addEventListener('click', avanzar);
     cont.querySelector('#atras')?.addEventListener('click', ev => { ev.preventDefault(); dirAnim = 'back'; paso--; pintarPaso(); });
     cont.querySelector('#saltar')?.addEventListener('click', ev => { ev.preventDefault(); avanzar(); });
+    cont.querySelector('#soy-otro')?.addEventListener('click', ev => {
+      ev.preventDefault();
+      cont.querySelector('#soy-caja').classList.remove('oculto');
+      cont.querySelector('#soy-nombre').focus();
+    });
+    const fijarQuien = () => {
+      quien = (cont.querySelector('#soy-nombre').value || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+      R.respondente = quien;
+      pintarPaso();
+    };
+    cont.querySelector('#soy-ok')?.addEventListener('click', fijarQuien);
+    cont.querySelector('#soy-nombre')?.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter') { ev.preventDefault(); fijarQuien(); }
+    });
   }
 
   let enviando = false;   // un solo POST en vuelo, pero reintentable si falla
@@ -408,10 +446,12 @@
     if (d.ya_contesto) {
       /* Ya contestó: se le agradece y se le deja corregir si quiere, en vez de
          cerrarle la puerta o dejar que mande lo mismo dos veces sin saberlo. */
+      const n = +d.respuestas || 1;
       cont.innerHTML = `<div class="msg"><span class="tic">✓</span>
-        <h2>Ya nos habías contestado</h2>
-        <p>Gracias — tus respuestas de <b>${esc(d.folio_ot)}</b> ya están con el equipo.<br><br>
-        Si quieres corregir o agregar algo, <a href="#" id="otra">vuelve a llenar la evaluación</a>.</p></div>`;
+        <h2>Ya recibimos ${n === 1 ? 'una respuesta' : n + ' respuestas'} de este pedido</h2>
+        <p>Gracias — lo de <b>${esc(d.folio_ot)}</b> ya está con el equipo.<br><br>
+        Si <b>eres otra persona</b> del equipo y quieres dejar tu punto de vista, o si quieres corregir el tuyo,
+        <a href="#" id="otra">contesta la evaluación</a>. Las opiniones distintas nos sirven más que una sola.</p></div>`;
       document.getElementById('otra').addEventListener('click', ev => { ev.preventDefault(); pintarFormulario(d); });
       return;
     }
