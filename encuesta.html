@@ -106,6 +106,12 @@
   .wiz-nav a { font-size: 12.5px; color: var(--suave); text-decoration: none; padding: 6px 2px; }
   .wiz-nav a:active { color: var(--oro-hondo); }
   .enviar:disabled { opacity: .45; cursor: default; }
+  .multi-nota { font-size: 12.5px; color: var(--oro-hondo); background: #FBF7EC;
+    border: 1px dashed #E4D3AE; border-radius: 8px; padding: 8px 12px; margin: -6px 0 13px; }
+  .op.multi .mk { border-radius: 6px; }
+  .op.multi .mk i { font-style: normal; font-size: 8px; font-weight: 800; color: #fff; }
+  .op.multi.on .mk { background: var(--oro-hondo); border-color: var(--oro-hondo); }
+  .op.multi.on .mk::after { display: none; }
 
   .msg { background: var(--blanco); border-radius: 14px; padding: 42px 24px; text-align: center;
     box-shadow: 0 2px 18px rgba(0,0,0,.06); }
@@ -217,8 +223,9 @@
         ['precio_alto', 'El precio fue alto para el resultado recibido'],
       ] },
 
-    { k: 'recompra', n: '05',
+    { k: 'recompra', n: '05', multi: 3,
       q: 'Para tu próximo proyecto, ¿qué tendríamos que hacer para ser tu primera opción?',
+      multiNota: 'Puedes elegir hasta 3 — la primera que marques cuenta como la más importante.',
       ops: [
         ['mas_rapido', 'Entregar más rápido'],
         ['precios_volumen', 'Mejorar precios por volumen'],
@@ -252,8 +259,12 @@
 
   function pintarPaso() {
     const d = datosOT, p = P[paso], ultimo = paso === P.length - 1;
-    const quien = d.empresa || d.cliente || '';
-    const elegido = R[p.k];
+    /* El saludo es para la PERSONA con la que se trató, no para la razón
+       social: "¿Cómo nos fue, Carlos?" — no "¿Cómo nos fue, Paran?" (César
+       lo vio en la primera prueba). Sin nombre capturado, sin nombre: un
+       saludo genérico bien puesto vale más que uno personalizado mal. */
+    const quien = (d.cliente || '').trim();
+    const elegido = p.multi ? (R.recompra_todas || []).length > 0 : !!R[p.k];
     const pct = Math.round(((paso) / P.length) * 100);
     const intro = paso === 0 ? `
       <div class="intro">
@@ -271,10 +282,15 @@
       </div>
       <div class="p anim-${dirAnim}" data-p="${p.k}">
         <div class="p-q">${p.q}</div>
-        <div class="ops">${p.ops.map(([v, t]) => `
-          <label class="op ${R[p.k] === v ? 'on' : ''}" data-v="${esc(v)}">
-            <input type="radio" name="${p.k}" value="${esc(v)}"><span class="mk"></span><span>${esc(t)}</span>
-          </label>`).join('')}</div>
+        ${p.multiNota ? `<div class="multi-nota">${esc(p.multiNota)}</div>` : ''}
+        <div class="ops">${p.ops.map(([v, t]) => {
+          const marcada = p.multi ? (R.recompra_todas || []).includes(v) : R[p.k] === v;
+          const orden = p.multi ? (R.recompra_todas || []).indexOf(v) : -1;
+          return `
+          <label class="op ${marcada ? 'on' : ''} ${p.multi ? 'multi' : ''}" data-v="${esc(v)}">
+            <input type="${p.multi ? 'checkbox' : 'radio'}" name="${p.k}" value="${esc(v)}"><span class="mk">${orden === 0 ? '<i>1ª</i>' : ''}</span><span>${esc(t)}</span>
+          </label>`;
+        }).join('')}</div>
         ${p.cal ? `<div id="cal-wrap" class="${elegido ? '' : 'oculto'}">
           <div class="sub-q">${p.cal}</div>
           <div class="cal" data-cal="motivo_cumplio">
@@ -308,6 +324,20 @@
 
     cont.querySelectorAll('.op').forEach(op => op.addEventListener('click', ev => {
       ev.preventDefault();                       // mata el segundo clic sintético del radio
+      if (p.multi) {
+        /* Hasta 3, y el ORDEN importa: la primera marcada es la prioridad.
+           Volver a tocar una marcada la desmarca; con 3 puestas, la cuarta
+           no entra (se avisa en la nota, no con un regaño). */
+        const v = op.dataset.v;
+        let t = R.recompra_todas || [];
+        if (t.includes(v)) t = t.filter(x => x !== v);
+        else if (t.length < 3) t = [...t, v];
+        R.recompra_todas = t;
+        R.recompra = t[0] || undefined;          // la prioridad, para las tendencias
+        if (!R.recompra) delete R.recompra;
+        pintarPaso();                            // re-pinta para el badge 1ª y los estados
+        return;
+      }
       cont.querySelectorAll('.op').forEach(o => o.classList.remove('on'));
       op.classList.add('on');
       R[p.k] = op.dataset.v;
