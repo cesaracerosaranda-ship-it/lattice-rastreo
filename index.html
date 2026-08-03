@@ -193,7 +193,7 @@ function pintar(data) {
 
     ${piezas.length ? `<div class="card">
       <div class="sec">TU PEDIDO</div>
-      ${piezas.map(p => `<div class="pz"><span class="d">${esc(p.d || 'Pieza')}</span><span class="n">×${p.n}</span></div>`).join('')}
+      ${piezas.map(p => `<div class="pz"><span class="d">${esc(p.d || 'Pieza')}</span><span class="n">×${+p.n || 0}</span></div>`).join('')}
       <div class="pz-tot"><span>Total de piezas</span><b>${ot.piezas || piezas.reduce((s, p) => s + (+p.n || 0), 0)}</b></div>
       ${ot.material ? `<div class="mat">Material: ${esc(ot.material)}</div>` : ''}
     </div>` : ''}
