@@ -80,6 +80,23 @@
 
   /* ── El asistente: barra de avance + navegación entre preguntas ── */
   .oculto { display: none; }
+  /* Animaciones (César 2-ago): cada pregunta ENTRA como tarjeta — avanzar se
+     siente avanzar, regresar se siente regresar. Curva suave, 300ms, nada
+     circense: esto es la carta de presentación, no una feria. Se apagan si el
+     sistema pide menos movimiento. */
+  @keyframes cardIn   { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes cardBack { from { opacity: 0; transform: translateY(-14px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes ticPop   { from { transform: scale(.25); opacity: 0; } 70% { transform: scale(1.12); } to { transform: scale(1); opacity: 1; } }
+  .p.anim-in, .anim-in .p   { animation: cardIn .3s cubic-bezier(.22,1,.36,1); }
+  .p.anim-back, .anim-back .p { animation: cardBack .3s cubic-bezier(.22,1,.36,1); }
+  .intro { animation: cardIn .35s cubic-bezier(.22,1,.36,1); }
+  .msg .tic { display: inline-block; animation: ticPop .5s cubic-bezier(.34,1.56,.64,1); }
+  #cal-wrap:not(.oculto), #txt-wrap:not(.oculto) { animation: cardIn .26s cubic-bezier(.22,1,.36,1); }
+  .op { transition: border-color .12s, background .12s, transform .08s; }
+  .op:active { transform: scale(.99); }
+  @media (prefers-reduced-motion: reduce) {
+    .p.anim-in, .p.anim-back, .intro, .msg .tic, #cal-wrap:not(.oculto), #txt-wrap:not(.oculto) { animation: none; }
+  }
   .prog { display: flex; align-items: center; gap: 12px; margin: 2px 2px 10px; }
   .prog-bar { flex: 1; height: 5px; background: #E6E1D3; border-radius: 4px; overflow: hidden; }
   .prog-bar div { height: 100%; background: var(--oro); border-radius: 4px; transition: width .3s ease; }
@@ -217,6 +234,7 @@
   const R = {};   // respuestas
   let paso = 0;   // pregunta visible
   let datosOT = null;
+  let dirAnim = 'in';   // hacia dónde entra la carta: avanzar baja, regresar sube
 
   /* ── ASISTENTE PASO A PASO (César 2-ago) ──────────────────────────────
      Antes las 5 preguntas salían todas juntas: "si de primera impresión ven
@@ -251,7 +269,7 @@
         <div class="prog-bar"><div style="width:${pct}%"></div></div>
         <span class="prog-t">PREGUNTA ${p.n} DE 05</span>
       </div>
-      <div class="p" data-p="${p.k}">
+      <div class="p anim-${dirAnim}" data-p="${p.k}">
         <div class="p-q">${p.q}</div>
         <div class="ops">${p.ops.map(([v, t]) => `
           <label class="op ${R[p.k] === v ? 'on' : ''}" data-v="${esc(v)}">
@@ -284,7 +302,7 @@
     const avanzar = () => {
       if (paso < P.length - 1) {
         if (avanzo) return; avanzo = true;
-        paso++; pintarPaso(); window.scrollTo({ top: 0 });
+        dirAnim = 'in'; paso++; pintarPaso(); window.scrollTo({ top: 0 });
       } else enviar();   // enviar trae su propia bandera de vuelo (reintentable si falla)
     };
 
@@ -310,7 +328,7 @@
     }));
     cont.querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { R[t.dataset.txt] = t.value; }));
     cont.querySelector('#sig')?.addEventListener('click', avanzar);
-    cont.querySelector('#atras')?.addEventListener('click', ev => { ev.preventDefault(); paso--; pintarPaso(); });
+    cont.querySelector('#atras')?.addEventListener('click', ev => { ev.preventDefault(); dirAnim = 'back'; paso--; pintarPaso(); });
     cont.querySelector('#saltar')?.addEventListener('click', ev => { ev.preventDefault(); avanzar(); });
   }
 
