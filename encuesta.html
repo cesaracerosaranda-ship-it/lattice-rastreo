@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Evaluación del servicio · Lattice Works</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════════════════════════════════
+     ENCUESTA DE EVALUACIÓN · 2-ago-2026
+     Documento de Gerardo: 5 preguntas, 2-3 min. El contenido de cada pregunta
+     se respeta TAL CUAL — el documento pedía conservar exactamente su enfoque.
+     Diseñada para el celular primero: ahí es donde el cliente la va a abrir,
+     y una encuesta incómoda en el teléfono simplemente no se contesta.
+     ══════════════════════════════════════════════════════════════════════ */
+  :root {
+    --tinta: #1B1B1B; --papel: #F3F1EC; --oro: #BDA76C; --oro-hondo: #8A7233;
+    --borde: #E0DCD2; --suave: #6B6B6B; --blanco: #fff; --verde: #2F6B48;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--papel); font-family: 'Manrope', sans-serif; color: var(--tinta); }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  .cab { display: flex; align-items: center; gap: 12px; padding: 4px 2px 18px; }
+  .cab img { height: 30px; display: block; }
+  .cab .folio { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    color: var(--suave); letter-spacing: .05em; }
+
+  .intro { background: var(--blanco); border-radius: 14px; padding: 22px 20px; margin-bottom: 16px;
+    box-shadow: 0 2px 18px rgba(0,0,0,.06); }
+  .intro h1 { font-size: 21px; line-height: 1.3; margin: 0 0 10px; letter-spacing: -.01em; }
+  .intro p { font-size: 14px; line-height: 1.65; color: #4A4A4A; margin: 0 0 8px; }
+  .intro .franco { font-size: 12.5px; color: var(--suave); border-top: 1px solid var(--borde);
+    margin-top: 14px; padding-top: 12px; line-height: 1.6; }
+  .min { display: inline-block; background: #FBF7EC; color: var(--oro-hondo); border: 1px solid #E4D3AE;
+    border-radius: 20px; padding: 3px 12px; font-size: 11.5px; font-weight: 600; margin-bottom: 12px; }
+
+  .p { background: var(--blanco); border-radius: 14px; padding: 20px; margin-bottom: 14px;
+    box-shadow: 0 2px 18px rgba(0,0,0,.06); }
+  .p-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--oro-hondo);
+    letter-spacing: .12em; margin-bottom: 7px; }
+  .p-q { font-size: 16px; font-weight: 700; line-height: 1.42; margin: 0 0 15px; }
+
+  /* Opciones: área de toque grande — se contestan con el pulgar */
+  .ops { display: flex; flex-direction: column; gap: 8px; }
+  .op { display: flex; align-items: center; gap: 11px; border: 1.5px solid var(--borde);
+    border-radius: 10px; padding: 13px 14px; cursor: pointer; font-size: 14.5px; line-height: 1.4;
+    background: #fff; transition: border-color .12s, background .12s; }
+  .op:active { background: #FAF8F3; }
+  .op input { position: absolute; opacity: 0; pointer-events: none; }
+  .op .mk { width: 19px; height: 19px; min-width: 19px; border: 1.5px solid #C8C2B4; border-radius: 50%;
+    display: grid; place-items: center; }
+  .op .mk::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: transparent; }
+  .op.on { border-color: var(--oro); background: #FBF7EC; }
+  .op.on .mk { border-color: var(--oro-hondo); }
+  .op.on .mk::after { background: var(--oro-hondo); }
+
+  /* Calificación 1-5 */
+  .cal { display: flex; gap: 7px; margin-top: 14px; }
+  .cal button { flex: 1; border: 1.5px solid var(--borde); background: #fff; border-radius: 10px;
+    padding: 13px 0; font-family: inherit; font-size: 16px; font-weight: 700; color: var(--tinta);
+    cursor: pointer; }
+  .cal button.on { border-color: var(--oro); background: var(--oro); color: var(--tinta); }
+  .cal-lb { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--suave); margin-top: 7px; }
+  .sub-q { font-size: 13.5px; color: var(--suave); margin: 16px 0 0; line-height: 1.5; }
+
+  textarea { width: 100%; margin-top: 10px; border: 1.5px solid var(--borde); border-radius: 10px;
+    padding: 11px 12px; font-family: inherit; font-size: 14.5px; line-height: 1.55; resize: vertical;
+    min-height: 74px; background: #fff; color: var(--tinta); }
+  textarea:focus { outline: none; border-color: var(--oro); }
+  .op-lb { font-size: 12px; color: var(--suave); margin-top: 12px; display: block; }
+
+  .enviar { width: 100%; background: var(--oro); color: var(--tinta); border: 0; border-radius: 12px;
+    padding: 16px; font-family: inherit; font-size: 15.5px; font-weight: 700; cursor: pointer;
+    margin-top: 6px; }
+  .enviar:disabled { opacity: .5; cursor: default; }
+  .estado { text-align: center; font-size: 13.5px; margin-top: 12px; min-height: 20px; line-height: 1.55; }
+  .estado.mal { color: #A33; }
+
+  .msg { background: var(--blanco); border-radius: 14px; padding: 42px 24px; text-align: center;
+    box-shadow: 0 2px 18px rgba(0,0,0,.06); }
+  .msg h2 { font-size: 19px; margin: 0 0 10px; }
+  .msg p { font-size: 14px; line-height: 1.65; color: var(--suave); margin: 0; }
+  .msg .tic { font-size: 40px; color: var(--verde); display: block; margin-bottom: 14px; }
+
+  .pie { text-align: center; color: #8A8A8A; font-size: 11.5px; line-height: 1.7; margin-top: 22px; }
+  .pie a { color: var(--oro-hondo); }
+
+  @media (max-width: 420px) {
+    .intro h1 { font-size: 19px; }
+    .p-q { font-size: 15.5px; }
+    .cal button { padding: 12px 0; font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="cab">
+    <img src="https://erp.latticeworks.mx/assets/logo-lattice-correo.png" alt="Lattice Works">
+    <span class="folio" id="folio"></span>
+  </div>
+  <div id="cont"><div class="msg"><p>Abriendo la evaluación…</p></div></div>
+  <div class="pie">
+    Lattice Works · corte láser CNC · Monterrey<br>
+    ¿Prefieres platicarlo? <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a>
+  </div>
+</div>
+
+<!-- Misma config que el rastreo y la cotización: URL + anon key del proyecto.
+     El anon key es público por diseño; esta página solo puede llamar
+     get_encuesta y guarda_encuesta, y ambas exigen un token válido. -->
+<script src="./rastreo-config.js"></script>
+<script>
+(() => {
+  'use strict';
+  const cont = document.getElementById('cont');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const msg = (h2, p, tic) => {
+    cont.innerHTML = `<div class="msg">${tic ? '<span class="tic">✓</span>' : ''}<h2>${h2}</h2><p>${p}</p></div>`;
+  };
+  const token = new URLSearchParams(location.search).get('t');
+
+  if (!window.RASTREO_CFG || !RASTREO_CFG.url || !RASTREO_CFG.anonKey) {
+    msg('Página sin configurar', 'Falta <b>rastreo-config.js</b> junto a esta página. Si eres del equipo de Lattice Works: es el mismo archivo que ya usan el rastreo y las cotizaciones.');
+    return;
+  }
+  if (!token) { msg('Enlace incompleto', 'Este enlace no trae el código de tu pedido. Escríbenos a <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a> y te mandamos uno nuevo.'); return; }
+
+  const api = (fn, body) => fetch(RASTREO_CFG.url.replace(/\/+$/, '') + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { apikey: RASTREO_CFG.anonKey, Authorization: 'Bearer ' + RASTREO_CFG.anonKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  /* ── Las 5 preguntas, tal cual las definió Gerardo ────────────────────── */
+  const P = [
+    { k: 'motivo', n: '01',
+      q: '¿Qué fue lo más importante para elegir a Lattice Works?',
+      ops: [
+        ['calidad', 'La calidad del trabajo'],
+        ['precio', 'El precio'],
+        ['tiempo', 'El tiempo de entrega'],
+        ['atencion', 'La atención y comunicación'],
+        ['personalizado', 'Que pudiéramos fabricar algo personalizado'],
+        ['recomendacion', 'Una recomendación o la confianza'],
+      ],
+      cal: '¿Y qué tan bien cumplimos con eso?' },
+
+    { k: 'entrega', n: '02',
+      q: '¿El producto entregado cumplió con las medidas, acabados y características acordadas?',
+      ops: [
+        ['supero', 'Superó lo acordado'],
+        ['completo', 'Cumplió completamente'],
+        ['parcial', 'Cumplió parcialmente'],
+        ['correcciones', 'Requirió correcciones'],
+        ['no_cumplio', 'No cumplió'],
+      ],
+      txt: '¿Qué detalle deberíamos corregir o controlar mejor?', txtK: 'entrega_detalle' },
+
+    { k: 'friccion', n: '03',
+      q: 'Durante el proyecto, ¿en qué momento pudimos haber sido más claros o eficientes?',
+      ops: [
+        ['cotizacion', 'En la cotización'],
+        ['medidas', 'Al confirmar medidas o diseño'],
+        ['seguimiento', 'En el seguimiento del pedido'],
+        ['cambios', 'En los cambios durante la fabricación'],
+        ['fecha', 'En la fecha de entrega'],
+        ['entrega', 'En la entrega'],
+        ['facturacion', 'En la facturación y el pago'],
+        ['ninguno', 'En ninguno, todo fluyó bien'],
+      ],
+      txt: '¿Nos cuentas qué pasó? (opcional)', txtK: 'friccion_comentario' },
+
+    { k: 'valor', n: '04',
+      q: 'Considerando el resultado, ¿cómo percibiste la relación entre precio, calidad y tiempo de entrega?',
+      ops: [
+        ['mejor', 'Mucho mejor de lo esperado'],
+        ['justa', 'Adecuada y justa'],
+        ['calidad_ok', 'La calidad fue buena, pero el tiempo puede mejorar'],
+        ['tiempo_ok', 'El tiempo fue bueno, pero la calidad puede mejorar'],
+        ['precio_alto', 'El precio fue alto para el resultado recibido'],
+      ] },
+
+    { k: 'recompra', n: '05',
+      q: 'Para tu próximo proyecto, ¿qué tendríamos que hacer para ser tu primera opción?',
+      ops: [
+        ['mas_rapido', 'Entregar más rápido'],
+        ['precios_volumen', 'Mejorar precios por volumen'],
+        ['seguimiento', 'Dar mayor seguimiento'],
+        ['procesos', 'Ofrecer más procesos o acabados'],
+        ['presentacion', 'Mejorar la presentación o el empaque'],
+        ['recurrentes', 'Facilitar cotizaciones y pedidos recurrentes'],
+        ['mantener', 'Nada: mantener el servicio actual'],
+      ],
+      txt: '¿Algo más que quieras decirnos? (opcional)', txtK: 'recompra_comentario' },
+  ];
+
+  const R = {};   // respuestas
+
+  function pregunta(p) {
+    return `<div class="p" data-p="${p.k}">
+      <div class="p-n">PREGUNTA ${p.n} DE 05</div>
+      <div class="p-q">${p.q}</div>
+      <div class="ops">${p.ops.map(([v, t]) => `
+        <label class="op" data-v="${esc(v)}">
+          <input type="radio" name="${p.k}" value="${esc(v)}"><span class="mk"></span><span>${esc(t)}</span>
+        </label>`).join('')}</div>
+      ${p.cal ? `<div class="sub-q">${p.cal}</div>
+        <div class="cal" data-cal="motivo_cumplio">
+          ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}">${n}</button>`).join('')}
+        </div>
+        <div class="cal-lb"><span>No cumplieron</span><span>Cumplieron de sobra</span></div>` : ''}
+      ${p.txt ? `<label class="op-lb">${esc(p.txt)}</label>
+        <textarea data-txt="${p.txtK}" maxlength="1200" rows="3"></textarea>` : ''}
+    </div>`;
+  }
+
+  function pintarFormulario(d) {
+    const quien = d.empresa || d.cliente || '';
+    cont.innerHTML = `
+      <div class="intro">
+        <span class="min">⏱ Te toma 2 o 3 minutos</span>
+        <h1>¿Cómo nos fue con tu pedido${quien ? `, ${esc(quien.split(' ')[0])}` : ''}?</h1>
+        <p>Son cinco preguntas. No buscamos felicitaciones: queremos saber qué mejorar
+           y en qué parte del proceso te hicimos perder tiempo.</p>
+        <p class="franco">Tus respuestas llegan al equipo junto con tu pedido <b>${esc(d.folio_ot)}</b>,
+           así que sabemos que son tuyas. Te lo decimos de frente para que respondas con confianza:
+           lo que escribas se usa para corregir, nunca para discutir.</p>
+      </div>
+      ${P.map(pregunta).join('')}
+      <button class="enviar" id="ok">Enviar mis respuestas</button>
+      <div class="estado" id="est"></div>`;
+
+    // Opciones
+    cont.querySelectorAll('.op').forEach(op => op.addEventListener('click', () => {
+      const caja = op.closest('.p');
+      caja.querySelectorAll('.op').forEach(o => o.classList.remove('on'));
+      op.classList.add('on');
+      R[caja.dataset.p] = op.dataset.v;
+    }));
+    // Calificación
+    cont.querySelectorAll('.cal button').forEach(b => b.addEventListener('click', () => {
+      const fila = b.closest('.cal');
+      fila.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      R[fila.dataset.cal] = b.dataset.n;
+    }));
+    // Texto libre
+    cont.querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => {
+      R[t.dataset.txt] = t.value;
+    }));
+
+    cont.querySelector('#ok').addEventListener('click', enviar);
+  }
+
+  async function enviar() {
+    const est = document.getElementById('est'), btn = document.getElementById('ok');
+    /* Nada es obligatorio salvo dar UNA señal: obligar campos en una encuesta
+       voluntaria es la forma más rápida de que la abandonen a media página. */
+    const dio = ['motivo', 'entrega', 'friccion', 'valor', 'recompra'].some(k => R[k]);
+    if (!dio) {
+      est.className = 'estado mal';
+      est.textContent = 'Contesta al menos una pregunta y con eso nos ayudas.';
+      return;
+    }
+    btn.disabled = true; est.className = 'estado'; est.textContent = 'Enviando…';
+    try {
+      const r = await api('guarda_encuesta', { p_token: token, p_datos: R });
+      const d = r.ok ? await r.json() : null;
+      if (!d || !d.ok) throw new Error((d && d.motivo) || 'no se pudo guardar');
+      msg('Gracias por tomarte el tiempo',
+        'Ya lo tenemos. Lo que nos dijiste lo revisa el equipo, y si hay algo que corregir nos ponemos en contacto contigo.', true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      btn.disabled = false;
+      est.className = 'estado mal';
+      est.textContent = 'No se pudo enviar. Revisa tu conexión e inténtalo otra vez, o escríbenos a ventas@latticeworks.mx.';
+    }
+  }
+
+  (async () => {
+    let d = null;
+    try {
+      const r = await api('get_encuesta', { p_token: token });
+      if (r.ok) d = await r.json();
+    } catch (e) { /* sin red */ }
+
+    if (!d || !d.folio_ot) {
+      msg('No encontramos esta evaluación',
+        'El enlace puede haber expirado, o el pedido todavía no está marcado como entregado. Escríbenos a <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a> y lo revisamos.');
+      return;
+    }
+    document.getElementById('folio').textContent = d.folio_ot;
+    if (d.ya_contesto) {
+      /* Ya contestó: se le agradece y se le deja corregir si quiere, en vez de
+         cerrarle la puerta o dejar que mande lo mismo dos veces sin saberlo. */
+      cont.innerHTML = `<div class="msg"><span class="tic">✓</span>
+        <h2>Ya nos habías contestado</h2>
+        <p>Gracias — tus respuestas de <b>${esc(d.folio_ot)}</b> ya están con el equipo.<br><br>
+        Si quieres corregir o agregar algo, <a href="#" id="otra">vuelve a llenar la evaluación</a>.</p></div>`;
+      document.getElementById('otra').addEventListener('click', ev => { ev.preventDefault(); pintarFormulario(d); });
+      return;
+    }
+    pintarFormulario(d);
+  })();
+})();
+</script>
+</body>
+</html>
