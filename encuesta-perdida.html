@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Antes de cerrar el proyecto · Lattice Works</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════════════════════════════════════
+     ENCUESTA DE EVALUACIÓN · 2-ago-2026
+     Documento de Gerardo: 5 preguntas, 2-3 min. El contenido de cada pregunta
+     se respeta TAL CUAL — el documento pedía conservar exactamente su enfoque.
+     Diseñada para el celular primero: ahí es donde el cliente la va a abrir,
+     y una encuesta incómoda en el teléfono simplemente no se contesta.
+     ══════════════════════════════════════════════════════════════════════ */
+  :root {
+    --tinta: #1B1B1B; --papel: #F3F1EC; --oro: #BDA76C; --oro-hondo: #8A7233;
+    --borde: #E0DCD2; --suave: #6B6B6B; --blanco: #fff; --verde: #2F6B48;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--papel); font-family: 'Manrope', sans-serif; color: var(--tinta); }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  .cab { display: flex; align-items: center; gap: 12px; padding: 4px 2px 18px; }
+  .cab img { height: 30px; display: block; }
+  .cab .folio { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    color: var(--suave); letter-spacing: .05em; }
+
+  .intro { background: var(--blanco); border-radius: 14px; padding: 22px 20px; margin-bottom: 16px;
+    box-shadow: 0 2px 18px rgba(0,0,0,.06); }
+  .intro h1 { font-size: 21px; line-height: 1.3; margin: 0 0 10px; letter-spacing: -.01em; }
+  .intro p { font-size: 14px; line-height: 1.65; color: #4A4A4A; margin: 0 0 8px; }
+  .intro .franco { font-size: 12.5px; color: var(--suave); border-top: 1px solid var(--borde);
+    margin-top: 14px; padding-top: 12px; line-height: 1.6; }
+  .min { display: inline-block; background: #FBF7EC; color: var(--oro-hondo); border: 1px solid #E4D3AE;
+    border-radius: 20px; padding: 3px 12px; font-size: 11.5px; font-weight: 600; margin-bottom: 12px; }
+
+  .p { background: var(--blanco); border-radius: 14px; padding: 20px; margin-bottom: 14px;
+    box-shadow: 0 2px 18px rgba(0,0,0,.06); }
+  .p-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--oro-hondo);
+    letter-spacing: .12em; margin-bottom: 7px; }
+  .p-q { font-size: 16px; font-weight: 700; line-height: 1.42; margin: 0 0 15px; }
+
+  /* Opciones: área de toque grande — se contestan con el pulgar */
+  .ops { display: flex; flex-direction: column; gap: 8px; }
+  .op { display: flex; align-items: center; gap: 11px; border: 1.5px solid var(--borde);
+    border-radius: 10px; padding: 13px 14px; cursor: pointer; font-size: 14.5px; line-height: 1.4;
+    background: #fff; transition: border-color .12s, background .12s; }
+  .op:active { background: #FAF8F3; }
+  .op input { position: absolute; opacity: 0; pointer-events: none; }
+  .op .mk { width: 19px; height: 19px; min-width: 19px; border: 1.5px solid #C8C2B4; border-radius: 50%;
+    display: grid; place-items: center; }
+  .op .mk::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: transparent; }
+  .op.on { border-color: var(--oro); background: #FBF7EC; }
+  .op.on .mk { border-color: var(--oro-hondo); }
+  .op.on .mk::after { background: var(--oro-hondo); }
+
+  /* Calificación 1-5 */
+  .cal { display: flex; gap: 7px; margin-top: 14px; }
+  .cal button { flex: 1; border: 1.5px solid var(--borde); background: #fff; border-radius: 10px;
+    padding: 13px 0; font-family: inherit; font-size: 16px; font-weight: 700; color: var(--tinta);
+    cursor: pointer; }
+  .cal button.on { border-color: var(--oro); background: var(--oro); color: var(--tinta); }
+  .cal-lb { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--suave); margin-top: 7px; }
+  .sub-q { font-size: 13.5px; color: var(--suave); margin: 16px 0 0; line-height: 1.5; }
+
+  textarea { width: 100%; margin-top: 10px; border: 1.5px solid var(--borde); border-radius: 10px;
+    padding: 11px 12px; font-family: inherit; font-size: 14.5px; line-height: 1.55; resize: vertical;
+    min-height: 74px; background: #fff; color: var(--tinta); }
+  textarea:focus { outline: none; border-color: var(--oro); }
+  .op-lb { font-size: 12px; color: var(--suave); margin-top: 12px; display: block; }
+
+  .enviar { width: 100%; background: var(--oro); color: var(--tinta); border: 0; border-radius: 12px;
+    padding: 16px; font-family: inherit; font-size: 15.5px; font-weight: 700; cursor: pointer;
+    margin-top: 6px; }
+  .enviar:disabled { opacity: .5; cursor: default; }
+  .estado { text-align: center; font-size: 13.5px; margin-top: 12px; min-height: 20px; line-height: 1.55; }
+  .estado.mal { color: #A33; }
+
+  /* ── El asistente: barra de avance + navegación entre preguntas ── */
+  .oculto { display: none; }
+  /* Animaciones (César 2-ago): cada pregunta ENTRA como tarjeta — avanzar se
+     siente avanzar, regresar se siente regresar. Curva suave, 300ms, nada
+     circense: esto es la carta de presentación, no una feria. Se apagan si el
+     sistema pide menos movimiento. */
+  @keyframes cardIn   { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes cardBack { from { opacity: 0; transform: translateY(-14px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes ticPop   { from { transform: scale(.25); opacity: 0; } 70% { transform: scale(1.12); } to { transform: scale(1); opacity: 1; } }
+  .p.anim-in, .anim-in .p   { animation: cardIn .3s cubic-bezier(.22,1,.36,1); }
+  .p.anim-back, .anim-back .p { animation: cardBack .3s cubic-bezier(.22,1,.36,1); }
+  .intro { animation: cardIn .35s cubic-bezier(.22,1,.36,1); }
+  .msg .tic { display: inline-block; animation: ticPop .5s cubic-bezier(.34,1.56,.64,1); }
+  #cal-wrap:not(.oculto), #txt-wrap:not(.oculto) { animation: cardIn .26s cubic-bezier(.22,1,.36,1); }
+  .op { transition: border-color .12s, background .12s, transform .08s; }
+  .op:active { transform: scale(.99); }
+  @media (prefers-reduced-motion: reduce) {
+    .p.anim-in, .p.anim-back, .intro, .msg .tic, #cal-wrap:not(.oculto), #txt-wrap:not(.oculto) { animation: none; }
+  }
+  .prog { display: flex; align-items: center; gap: 12px; margin: 2px 2px 10px; }
+  .prog-bar { flex: 1; height: 5px; background: #E6E1D3; border-radius: 4px; overflow: hidden; }
+  .prog-bar div { height: 100%; background: var(--oro); border-radius: 4px; transition: width .3s ease; }
+  .prog-t { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--oro-hondo);
+    letter-spacing: .1em; white-space: nowrap; }
+  .wiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  .wiz-nav a { font-size: 12.5px; color: var(--suave); text-decoration: none; padding: 6px 2px; }
+  .wiz-nav a:active { color: var(--oro-hondo); }
+  .enviar:disabled { opacity: .45; cursor: default; }
+  .soy { border-top: 1px solid var(--borde); margin-top: 14px; padding-top: 12px;
+    font-size: 12.5px; color: var(--suave); line-height: 1.6; }
+  .soy a { color: var(--oro-hondo); }
+  .soy #soy-caja { display: flex; gap: 8px; margin-top: 9px; }
+  .soy input { flex: 1; min-width: 0; border: 1.5px solid var(--borde); border-radius: 9px;
+    padding: 10px 11px; font-family: inherit; font-size: 14px; background: #fff; color: var(--tinta); }
+  .soy input:focus { outline: none; border-color: var(--oro); }
+  .btn-soy { border: 0; background: var(--oro); color: var(--tinta); border-radius: 9px;
+    padding: 0 15px; font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .multi-nota { font-size: 12.5px; color: var(--oro-hondo); background: #FBF7EC;
+    border: 1px dashed #E4D3AE; border-radius: 8px; padding: 8px 12px; margin: -6px 0 13px; }
+  .op.multi .mk { border-radius: 6px; }
+  .op.multi .mk i { font-style: normal; font-size: 8px; font-weight: 800; color: #fff; }
+  .op.multi.on .mk { background: var(--oro-hondo); border-color: var(--oro-hondo); }
+  .op.multi.on .mk::after { display: none; }
+
+  .msg { background: var(--blanco); border-radius: 14px; padding: 42px 24px; text-align: center;
+    box-shadow: 0 2px 18px rgba(0,0,0,.06); }
+  .msg h2 { font-size: 19px; margin: 0 0 10px; }
+  .msg p { font-size: 14px; line-height: 1.65; color: var(--suave); margin: 0; }
+  .msg .tic { font-size: 40px; color: var(--verde); display: block; margin-bottom: 14px; }
+
+  .pie { text-align: center; color: #8A8A8A; font-size: 11.5px; line-height: 1.7; margin-top: 22px; }
+  .pie a { color: var(--oro-hondo); }
+
+  @media (max-width: 420px) {
+    .intro h1 { font-size: 19px; }
+    .p-q { font-size: 15.5px; }
+    .cal button { padding: 12px 0; font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="cab">
+    <img src="https://erp.latticeworks.mx/assets/logo-lattice-correo.png" alt="Lattice Works">
+    <span class="folio" id="folio"></span>
+  </div>
+  <div id="cont"><div class="msg"><p>Abriendo…</p></div></div>
+  <div class="pie">
+    Lattice Works · corte láser CNC · Monterrey<br>
+    ¿Prefieres platicarlo? <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a>
+  </div>
+</div>
+
+<!-- Misma config que el rastreo y la cotización: URL + anon key del proyecto.
+     El anon key es público por diseño; esta página solo puede llamar
+     get_encuesta y guarda_encuesta, y ambas exigen un token válido. -->
+<script src="./rastreo-config.js"></script>
+<script>
+(() => {
+  'use strict';
+  const cont = document.getElementById('cont');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const msg = (h2, p, tic) => {
+    cont.innerHTML = `<div class="msg">${tic ? '<span class="tic">✓</span>' : ''}<h2>${h2}</h2><p>${p}</p></div>`;
+  };
+  const token = new URLSearchParams(location.search).get('t');
+
+  if (!window.RASTREO_CFG || !RASTREO_CFG.url || !RASTREO_CFG.anonKey) {
+    msg('Página sin configurar', 'Falta <b>rastreo-config.js</b> junto a esta página. Si eres del equipo de Lattice Works: es el mismo archivo que ya usan el rastreo y las cotizaciones.');
+    return;
+  }
+  if (!token) { msg('Enlace incompleto', 'Este enlace no trae su código. Escríbenos a <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a> y te mandamos uno nuevo.'); return; }
+
+  const api = (fn, body) => fetch(RASTREO_CFG.url.replace(/\/+$/, '') + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { apikey: RASTREO_CFG.anonKey, Authorization: 'Bearer ' + RASTREO_CFG.anonKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  /* ── Cuatro preguntas. El tono lo decidió César: cerrar el ciclo con clase,
+        sin reclamo. A un lead que dejó de contestar, "¿por qué no nos elegiste?"
+        se lee como reproche; esto se lee como profesionalismo. ─────────────── */
+  const P = [
+    { k: 'desenlace', n: '01',
+      q: '¿Qué pasó al final con el proyecto?',
+      ops: [
+        ['otro_proveedor', 'Lo hizo otro proveedor'],
+        ['pospuesto', 'Se pospuso o se canceló'],
+        ['evaluando', 'Sigue en evaluación'],
+        ['no_procedio', 'Al final no lo necesitábamos'],
+      ] },
+
+    { k: 'factor', n: '02', dep: 'desenlace', soloSi: r => r.desenlace === 'otro_proveedor',
+      q: '¿Qué pesó más en esa decisión?',
+      ops: [
+        ['precio', 'El precio'],
+        ['tiempo', 'El tiempo de entrega'],
+        ['confianza', 'La confianza o la experiencia previa con ellos'],
+        ['alcance', 'Hacían cosas que nosotros no'],
+        ['seguimiento', 'El seguimiento que les dimos'],
+        ['otro', 'Otra cosa'],
+      ] },
+
+    { k: 'cercania', n: '03',
+      q: '¿Qué tan cerca estuvimos?',
+      ops: [
+        ['cerca', 'Nos faltó poco'],
+        ['parejo', 'Estuvo parejo'],
+        ['lejos', 'No estuvimos cerca'],
+      ] },
+
+    /* La que convierte esto en pipeline y no solo en aprendizaje: un cliente
+       perdido que contesta "sí" es un lead vivo. */
+    { k: 'volveria', n: '04',
+      q: '¿Nos considerarías para un próximo proyecto?',
+      ops: [
+        ['si', 'Sí, con gusto'],
+        ['tal_vez', 'Tal vez, según el proyecto'],
+        ['no', 'No'],
+      ],
+      txt: '¿Algo que debamos hacer distinto la próxima vez? (opcional)', txtK: 'comentario' },
+  ];
+
+  const R = {};   // respuestas
+  let paso = 0;   // pregunta visible
+  let datosOT = null;
+  let dirAnim = 'in';   // hacia dónde entra la carta: avanzar baja, regresar sube
+  /* Quién contesta. Vacío = el contacto principal. Con el CC del correo, un
+     solo enlace lo abren varios (gerencia, compras, dirección), así que el
+     token ya no basta para saber quién es: hay que preguntarlo. Pero sin
+     cobrarle fricción al caso común — el contacto principal no teclea nada. */
+  let quien = '';
+
+  /* ── ASISTENTE PASO A PASO (César 2-ago) ──────────────────────────────
+     Antes las 5 preguntas salían todas juntas: "si de primera impresión ven
+     que es una encuesta larga puede que no la contesten". Ahora se ve UNA
+     pregunta y una barra de avance — se lee corto porque ES corto, de una en
+     una. Reglas de avance:
+     · pregunta de pura selección → avanza sola al elegir (nada más que hacer)
+     · pregunta con comentario opcional → botón Continuar, para que quien
+       quiera escribir pueda — y quien no, siga con un clic
+     · siempre se puede regresar (‹ Anterior) o saltar: obligar es la forma
+       más rápida de que la abandonen, media respuesta vale más que ninguna */
+  function pintarFormulario(d) {
+    datosOT = d; paso = 0; pintarPaso();
+  }
+
+  function pintarPaso() {
+    const d = datosOT, p = P[paso], ultimo = paso === P.length - 1;
+    /* El saludo es para la PERSONA con la que se trató, no para la razón
+       social: "¿Cómo nos fue, Carlos?" — no "¿Cómo nos fue, Paran?" (César
+       lo vio en la primera prueba). Sin nombre capturado, sin nombre: un
+       saludo genérico bien puesto vale más que uno personalizado mal. */
+    const contacto = (d.cliente || '').trim().split(' ')[0];
+    // El saludo usa a quien de verdad está contestando, si se identificó
+    const saludo = (quien || contacto || '').trim().split(' ')[0];
+    const elegido = p.multi ? (R.recompra_todas || []).length > 0 : !!R[p.k];
+    /* Las preguntas que de verdad le van a salir a ESTA persona: si dijo que
+       el proyecto se canceló, la 02 no aplica y el contador no debe prometerla.
+       Decir "01 de 04" y enseñar tres es una mentira chica que se nota.
+       Pero mientras NO haya contestado la pregunta de la que depende, sí cuenta:
+       arrancar en "01 de 03" sería adivinar su respuesta antes de que la dé. */
+    const aplican = P.filter(x => !x.soloSi || !R[x.dep] || x.soloSi(R));
+    const iAct = Math.max(1, aplican.findIndex(x => x.k === p.k) + 1);
+    const pct = Math.round(((iAct - 1) / aplican.length) * 100);
+    const intro = paso === 0 ? `
+      <div class="intro">
+        <span class="min">⏱ Dos minutos, cuatro preguntas</span>
+        <h1>Antes de cerrar este proyecto${saludo ? `, ${esc(saludo)}` : ''}</h1>
+        <p class="franco">Entendemos que la cotización <b>${esc(d.folio)}</b> tomó otro camino, y está bien.
+           Antes de cerrarla de nuestro lado nos ayudaría saber qué pasó — son cuatro preguntas y no
+           hay respuesta incómoda. Lo que nos digas se usa para mejorar, no para insistir.</p>
+        <div class="soy">${quien
+          ? `Contestas como <b>${esc(quien)}</b>. <a href="#" id="soy-otro">cambiar</a>`
+          : (contacto ? `¿No eres ${esc(contacto)}? <a href="#" id="soy-otro">Dinos quién nos contesta</a>` : `<a href="#" id="soy-otro">¿Nos dices tu nombre?</a>`)}
+          <div id="soy-caja" class="oculto">
+            <input id="soy-nombre" maxlength="80" placeholder="Tu nombre y área — ej. Ana Ruiz, compras" value="${esc(quien)}">
+            <button type="button" class="btn-soy" id="soy-ok">Listo</button>
+          </div>
+        </div>
+      </div>` : '';
+
+    cont.innerHTML = `${intro}
+      <div class="prog">
+        <div class="prog-bar"><div style="width:${pct}%"></div></div>
+        <span class="prog-t">PREGUNTA ${String(iAct).padStart(2, '0')} DE ${String(aplican.length).padStart(2, '0')}</span>
+      </div>
+      <div class="p anim-${dirAnim}" data-p="${p.k}">
+        <div class="p-q">${p.q}</div>
+        ${p.multiNota ? `<div class="multi-nota">${esc(p.multiNota)}</div>` : ''}
+        <div class="ops">${p.ops.map(([v, t]) => {
+          const marcada = p.multi ? (R.recompra_todas || []).includes(v) : R[p.k] === v;
+          const orden = p.multi ? (R.recompra_todas || []).indexOf(v) : -1;
+          return `
+          <label class="op ${marcada ? 'on' : ''} ${p.multi ? 'multi' : ''}" data-v="${esc(v)}">
+            <input type="${p.multi ? 'checkbox' : 'radio'}" name="${p.k}" value="${esc(v)}"><span class="mk">${orden === 0 ? '<i>1ª</i>' : ''}</span><span>${esc(t)}</span>
+          </label>`;
+        }).join('')}</div>
+        ${p.cal ? `<div id="cal-wrap" class="${elegido ? '' : 'oculto'}">
+          <div class="sub-q">${p.cal}</div>
+          <div class="cal" data-cal="motivo_cumplio">
+            ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" class="${String(R.motivo_cumplio) === String(n) ? 'on' : ''}">${n}</button>`).join('')}
+          </div>
+          <div class="cal-lb"><span>No cumplieron</span><span>Cumplieron de sobra</span></div>
+        </div>` : ''}
+        ${p.txt ? `<div id="txt-wrap" class="${elegido ? '' : 'oculto'}">
+          <label class="op-lb">${esc(p.txt)}</label>
+          <textarea data-txt="${p.txtK}" maxlength="1200" rows="3">${esc(R[p.txtK] || '')}</textarea>
+        </div>` : ''}
+        ${(p.txt || ultimo) ? `<button class="enviar" id="sig" ${elegido || ultimo ? '' : 'disabled'}>${ultimo ? 'Enviar mis respuestas' : 'Continuar →'}</button>` : ''}
+        <div class="wiz-nav">
+          ${paso ? '<a href="#" id="atras">‹ Anterior</a>' : '<span></span>'}
+          <a href="#" id="saltar">${ultimo ? 'Enviar sin esta respuesta ›' : 'Saltar esta pregunta ›'}</a>
+        </div>
+        <div class="estado" id="est"></div>
+      </div>`;
+
+    /* `avanzo` es el candado: cada pantalla puede avanzar UNA vez. Sin él, el
+       clic en un <label> dispara dos eventos (el real y el sintético del radio
+       que trae adentro) y el auto-avance brincaba una pregunta y enviaba antes
+       de tiempo — lo cachó la suite. De pilón protege el doble-tap del celular. */
+    let avanzo = false;
+    const avanzar = () => {
+      /* Preguntas condicionales: la 02 (¿qué pesó?) solo tiene sentido si el
+         proyecto se fue con otro proveedor. Preguntarle "¿qué pesó en la
+         decisión?" a quien canceló es no haber leído su respuesta anterior —
+         y en una encuesta de dos minutos eso se nota. */
+      let sig = paso + 1;
+      while (sig < P.length && P[sig].soloSi && !P[sig].soloSi(R)) sig++;
+      if (sig < P.length) {
+        /* El candado protege el AVANCE, no el envío: enviar() trae su propia
+           bandera de vuelo. Ponerlo arriba de todo dejaba el botón "Enviar mis
+           respuestas" muerto cuando la pantalla ya había avanzado una vez. */
+        if (avanzo) return; avanzo = true;
+        dirAnim = 'in'; paso = sig; pintarPaso(); window.scrollTo({ top: 0 });
+      } else enviar();
+    };
+
+    cont.querySelectorAll('.op').forEach(op => op.addEventListener('click', ev => {
+      ev.preventDefault();                       // mata el segundo clic sintético del radio
+      if (p.multi) {
+        /* Hasta 3, y el ORDEN importa: la primera marcada es la prioridad.
+           Volver a tocar una marcada la desmarca; con 3 puestas, la cuarta
+           no entra (se avisa en la nota, no con un regaño). */
+        const v = op.dataset.v;
+        let t = R.recompra_todas || [];
+        if (t.includes(v)) t = t.filter(x => x !== v);
+        else if (t.length < 3) t = [...t, v];
+        R.recompra_todas = t;
+        R.recompra = t[0] || undefined;          // la prioridad, para las tendencias
+        if (!R.recompra) delete R.recompra;
+        pintarPaso();                            // re-pinta para el badge 1ª y los estados
+        return;
+      }
+      cont.querySelectorAll('.op').forEach(o => o.classList.remove('on'));
+      op.classList.add('on');
+      R[p.k] = op.dataset.v;
+      if (p.cal) {
+        cont.querySelector('#cal-wrap').classList.remove('oculto');           // falta la calificación
+      } else if (p.txt) {
+        cont.querySelector('#txt-wrap').classList.remove('oculto');           // por si quiere contar
+        const b = cont.querySelector('#sig'); if (b) b.disabled = false;
+      } else {
+        setTimeout(avanzar, 280);                                             // nada más que pedir: sigue sola
+      }
+    }));
+    cont.querySelectorAll('.cal button').forEach(b => b.addEventListener('click', () => {
+      cont.querySelectorAll('.cal button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      R.motivo_cumplio = b.dataset.n;
+      setTimeout(avanzar, 280);
+    }));
+    cont.querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { R[t.dataset.txt] = t.value; }));
+    cont.querySelector('#sig')?.addEventListener('click', avanzar);
+    cont.querySelector('#atras')?.addEventListener('click', ev => { ev.preventDefault(); dirAnim = 'back'; paso--; pintarPaso(); });
+    cont.querySelector('#saltar')?.addEventListener('click', ev => { ev.preventDefault(); avanzar(); });
+    cont.querySelector('#soy-otro')?.addEventListener('click', ev => {
+      ev.preventDefault();
+      cont.querySelector('#soy-caja').classList.remove('oculto');
+      cont.querySelector('#soy-nombre').focus();
+    });
+    const fijarQuien = () => {
+      quien = (cont.querySelector('#soy-nombre').value || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+      R.respondente = quien;
+      pintarPaso();
+    };
+    cont.querySelector('#soy-ok')?.addEventListener('click', fijarQuien);
+    cont.querySelector('#soy-nombre')?.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter') { ev.preventDefault(); fijarQuien(); }
+    });
+  }
+
+  let enviando = false;   // un solo POST en vuelo, pero reintentable si falla
+  async function enviar() {
+    if (enviando) return;
+    const est = document.getElementById('est'), btn = document.getElementById('sig');
+    /* Nada es obligatorio salvo dar UNA señal: obligar campos en una encuesta
+       voluntaria es la forma más rápida de que la abandonen a media página. */
+    const dio = ['desenlace', 'factor', 'cercania', 'volveria'].some(k => R[k]);
+    if (!dio) {
+      est.className = 'estado mal';
+      est.textContent = 'Contesta al menos una pregunta y con eso nos ayudas — puedes regresar con ‹ Anterior.';
+      return;
+    }
+    enviando = true;
+    if (btn) btn.disabled = true;
+    est.className = 'estado'; est.textContent = 'Enviando…';
+    try {
+      const r = await api('guarda_encuesta_perdida', { p_token: token, p_datos: R });
+      const d = r.ok ? await r.json() : null;
+      if (!d || !d.ok) throw new Error((d && d.motivo) || 'no se pudo guardar');
+      msg('Gracias por tomarte el tiempo',
+        'Con esto cerramos el proyecto de nuestro lado. Si en el futuro se ofrece algo, aquí estamos — '
+        + 'y ya sabremos qué hacer distinto.', true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      enviando = false;
+      if (btn) btn.disabled = false;
+      est.className = 'estado mal';
+      est.textContent = 'No se pudo enviar. Revisa tu conexión e inténtalo otra vez, o escríbenos a ventas@latticeworks.mx.';
+    }
+  }
+
+  (async () => {
+    let d = null;
+    try {
+      const r = await api('get_encuesta_perdida', { p_token: token });
+      if (r.ok) d = await r.json();
+    } catch (e) { /* sin red */ }
+
+    if (!d || !d.ok || !d.folio) {
+      msg('No encontramos esta encuesta',
+        'El enlace puede haber expirado. Escríbenos a <a href="mailto:ventas@latticeworks.mx">ventas@latticeworks.mx</a> y lo revisamos.');
+      return;
+    }
+    const fEl = document.getElementById('folio'); if (fEl) fEl.textContent = d.folio;
+    if (d.ya_contestada) {
+      /* Ya contestó: se le agradece y se le deja corregir si quiere, en vez de
+         cerrarle la puerta o dejar que mande lo mismo dos veces sin saberlo. */
+      const n = 1;
+      cont.innerHTML = `<div class="msg"><span class="tic">✓</span>
+        <h2>Ya recibimos tu respuesta</h2>
+        <p>Gracias — lo de <b>${esc(d.folio)}</b> ya está con el equipo.<br><br>
+        Si <b>eres otra persona</b> del equipo y ves las cosas distinto, o si quieres corregir tu respuesta,
+        <a href="#" id="otra">contesta de nuevo</a>. Los puntos de vista distintos nos sirven más que uno solo.</p></div>`;
+      document.getElementById('otra').addEventListener('click', ev => { ev.preventDefault(); pintarFormulario(d); });
+      return;
+    }
+    pintarFormulario(d);
+  })();
+})();
+</script>
+</body>
+</html>
