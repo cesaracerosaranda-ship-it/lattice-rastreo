@@ -5,7 +5,18 @@
 <title>Seguimiento de producción · Lattice Works</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#121212" />
+<!-- LA PANTALLA NEGRA (8-ago, la vio César con el link de Arzate): esta hoja
+     de Google Fonts cargaba BLOQUEANDO el render. En el navegador embebido de
+     WhatsApp con señal lenta, si fonts.googleapis.com tarda, la página entera
+     se queda sin pintar — y en un teléfono en modo oscuro eso se ve NEGRO.
+     media="print" + onload la vuelve no-bloqueante: la página pinta al
+     instante con la fuente del sistema y la de marca entra cuando llega. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
 <style>
   /* mismos tokens que el ERP (simulador-v3.css) — homogeneidad total de marca */
   :root { --bg:#121212; --card:#1B1B1B; --card2:#161616; --line:#2c2c2c; --gold:#BDA76C; --txt:#fff; --txt2:#CFCFCF; --txt4:#8f8f8f; --green:#4ade80; }
@@ -61,8 +72,24 @@
   .paso.now .pl { color: var(--gold); font-weight: 700; }
   .paso .pf { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); padding-top: 3px; white-space: nowrap; }
 
+  /* tus diseños — el dibujo real de lo que se está cortando (8-ago).
+     El lienzo lleva una malla de puntos dorados MUY tenue: es la lámina
+     perforada que fabricamos, en un solo color de marca (la textura que se
+     exploró para la landing, aquí al mínimo — contexto, no adorno). */
+  .dz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 10px; }
+  .dz-grid.uno { grid-template-columns: 1fr; }
+  .dz { background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; min-width: 0; }
+  .dz .lienzo { background: radial-gradient(rgba(189,167,108,.09) 1px, transparent 1.3px); background-size: 13px 13px; border-radius: 7px; padding: 6px; }
+  .dz svg { width: 100%; height: 104px; display: block; }
+  .dz-grid.uno .dz svg { height: 170px; }
+  .dz .dzn { font-size: 11.5px; color: var(--txt2); margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dz .dzm { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
+  .dz .dzm b { color: var(--gold); font-weight: 600; }
+  .dz-nota { font-size: 10px; color: var(--txt4); margin-top: 10px; line-height: 1.5; }
+
   .err { text-align: center; padding: 60px 20px; color: var(--txt4); }
   .err h2 { color: var(--txt); font-size: 16px; margin-bottom: 8px; }
+  .err .retry { margin-top: 16px; background: var(--gold); color: #17150F; border: 0; border-radius: 9px; padding: 10px 22px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
   .live { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); padding: 2px 0 10px; }
   .live .dot { color: var(--green); animation: lat 2.4s ease-in-out infinite; }
   @keyframes lat { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
@@ -112,6 +139,10 @@ const err = (t, m) => { $app.innerHTML = `<div class="err"><h2>${t}</h2><p>${m}<
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmtF = s => s ? new Date(s.length <= 10 ? s + 'T12:00:00' : s).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : null;
 const fmtDH = s => new Date(s).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+/* El RPC manda la LLAVE interna del material (inox316, placaGruesa…); al
+   cliente se le habla con el nombre del documento. Mismo mapa que el ERP. */
+const MAT_NOMBRE = { acero: 'Acero al carbón', inoxidable: 'Inoxidable T304', inox316: 'Inoxidable T316', placaGruesa: 'Placa de acero', aluminio: 'Aluminio 3003' };
+const matBonito = s => String(s || '').split(' · ').map(t => t.replace(/^(\S+)/, k => MAT_NOMBRE[k] || k)).join(' · ');
 
 const token = new URLSearchParams(location.search).get('t');
 const demo = new URLSearchParams(location.search).has('demo');
@@ -123,15 +154,44 @@ async function traer() {
       piezas_lista: [ { d: 'Placa base 300×600 mm', n: 12 }, { d: 'Soporte en L cal. 16', n: 10 }, { d: 'Tapa perforada decorativa', n: 6 } ] },
       eventos: [ { de: 'pendiente', a: 'en_proceso', created_at: new Date(Date.now() - 36e5 * 5).toISOString() }, { de: null, a: 'pendiente', created_at: new Date(Date.now() - 864e5).toISOString() } ] };
   }
-  const r = await fetch(RASTREO_CFG.url.replace(/\/+$/, '') + '/rest/v1/rpc/get_rastreo_ot', {
-    method: 'POST',
-    headers: { apikey: RASTREO_CFG.anonKey, Authorization: 'Bearer ' + RASTREO_CFG.anonKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_token: token }),
-  });
-  return r.ok ? await r.json() : null;
+  // Timeout propio: en el navegador embebido de WhatsApp un fetch puede
+  // quedarse colgado sin resolver jamás — y eso era pantalla negra eterna.
+  const corte = new AbortController();
+  const t = setTimeout(() => corte.abort(), 12000);
+  try {
+    const r = await fetch(RASTREO_CFG.url.replace(/\/+$/, '') + '/rest/v1/rpc/get_rastreo_ot', {
+      method: 'POST',
+      headers: { apikey: RASTREO_CFG.anonKey, Authorization: 'Bearer ' + RASTREO_CFG.anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_token: token }),
+      signal: corte.signal,
+    });
+    return r.ok ? await r.json() : null;
+  } finally { clearTimeout(t); }
 }
 
-function pintar(data) {
+/* Última copia buena POR TOKEN: si el enlace ya abrió una vez en este
+   teléfono, la siguiente vez pinta al instante — aunque la red esté floja —
+   y el dato fresco entra en cuanto llega. */
+const CACHE_KEY = 'rastreo.cache.' + token;
+const cacheLeer = () => { try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) { return null; } };
+const cacheGuardar = d => { try { localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch (e) { /* modo privado: sin caché */ } };
+
+/* El dibujo real de la pieza (viz compacto del ERP: contornos simplificados).
+   DXF crece hacia arriba y SVG hacia abajo — de ahí el scale(1,-1). */
+function vizSVG(viz) {
+  if (!viz || !viz.bb || !Array.isArray(viz.c) || !viz.c.length) return '';
+  const bb = viz.bb, w = bb.x1 - bb.x0, h = bb.y1 - bb.y0;
+  if (!(w > 0) || !(h > 0)) return '';
+  const m = Math.max(w, h) * 0.07, grosor = (Math.max(w, h) / 95).toFixed(2);
+  const trazos = viz.c.map(k => {
+    if (!Array.isArray(k.p) || k.p.length < 2) return '';
+    const d = 'M' + k.p.map(pt => (+pt[0]).toFixed(1) + ' ' + (+pt[1]).toFixed(1)).join('L') + (k.z ? 'Z' : '');
+    return `<path d="${d}" fill="none" stroke="${k.i ? 'rgba(189,167,108,.5)' : '#BDA76C'}" stroke-width="${grosor}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }).join('');
+  return `<svg viewBox="${(bb.x0 - m).toFixed(1)} ${(-bb.y1 - m).toFixed(1)} ${(w + 2 * m).toFixed(1)} ${(h + 2 * m).toFixed(1)}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Dibujo de la pieza"><g transform="scale(1,-1)">${trazos}</g></svg>`;
+}
+
+function pintar(data, deCache) {
   const ot = data.ot, evs = data.eventos || [];
   const pausada = ot.estado === 'pausada';
   const VIS = visibles(!!ot.tiene_acabado);
@@ -191,11 +251,34 @@ function pintar(data) {
       </div>`).join('')}
     </div>` : ''}
 
+    ${(() => {
+      /* TUS DISEÑOS (8-ago): el mismo dibujo que el cliente vio en su
+         cotización, ahora en su rastreo — se corta EXACTAMENTE esto.
+         Solo aparece si la cotización trae DXF (el RPC v41 manda el viz);
+         un pedido capturado a mano simplemente no muestra la galería. */
+      const dz = (Array.isArray(ot.disenos) ? ot.disenos : []).filter(x => x && x.viz && x.viz.c && x.viz.c.length);
+      if (!dz.length) return '';
+      const algunaRecortada = dz.some(x => x.viz.dib && x.viz.n && x.viz.dib < x.viz.n);
+      return `<div class="card">
+        <div class="sec">TUS DISEÑOS · LO QUE ESTAMOS CORTANDO</div>
+        <div class="dz-grid ${dz.length === 1 ? 'uno' : ''}">
+          ${dz.map(x => {
+            const svg = vizSVG(x.viz); if (!svg) return '';
+            const bb = x.viz.bb, mm = `${Math.round(bb.x1 - bb.x0)} × ${Math.round(bb.y1 - bb.y0)} mm`;
+            return `<div class="dz"><div class="lienzo">${svg}</div>
+              <div class="dzn">${esc(x.d || 'Pieza')}</div>
+              <div class="dzm"><span>${mm}</span><b>×${+x.n || 1}</b></div></div>`;
+          }).join('')}
+        </div>
+        ${algunaRecortada ? '<div class="dz-nota">Vista simplificada del dibujo — el corte usa el diseño completo, con todo su detalle.</div>' : ''}
+      </div>`;
+    })()}
+
     ${piezas.length ? `<div class="card">
       <div class="sec">TU PEDIDO</div>
       ${piezas.map(p => `<div class="pz"><span class="d">${esc(p.d || 'Pieza')}</span><span class="n">×${+p.n || 0}</span></div>`).join('')}
       <div class="pz-tot"><span>Total de piezas</span><b>${ot.piezas || piezas.reduce((s, p) => s + (+p.n || 0), 0)}</b></div>
-      ${ot.material ? `<div class="mat">Material: ${esc(ot.material)}</div>` : ''}
+      ${ot.material ? `<div class="mat">Material: ${esc(matBonito(ot.material))}</div>` : ''}
     </div>` : ''}
 
     <div class="card">
@@ -208,9 +291,12 @@ function pintar(data) {
       </div>
     </div>
   `;
-  $live.innerHTML = `<span class="dot">●</span> EN VIVO · actualizado ${new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} · se refresca solo`;
+  $live.innerHTML = deCache
+    ? '<span class="dot" style="color:var(--gold)">●</span> mostrando la última copia · buscando lo más reciente…'
+    : `<span class="dot">●</span> EN VIVO · actualizado ${new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} · se refresca solo`;
 }
 
+let hayPintado = false;
 async function cargar(primera) {
   if (!demo && (!token || typeof RASTREO_CFG === 'undefined' || !RASTREO_CFG.url)) {
     return err('Esta orden no está disponible', 'El enlace no es válido o el seguimiento no está configurado. Contacta a Lattice Works.');
@@ -218,12 +304,26 @@ async function cargar(primera) {
   let data = null;
   try { data = await traer(); } catch (e) { data = null; }
   if (!data || !data.ot) {
-    if (primera) err('Esta orden no está disponible', 'El enlace de seguimiento no existe o fue desactivado. Contacta a tu proveedor para más información.');
+    // Sin respuesta ≠ enlace muerto: puede ser la señal. Si hay copia local ya
+    // pintada se queda; si no, se dice claro y se ofrece REINTENTAR — nunca
+    // más una pantalla muda.
+    if (primera && !hayPintado) {
+      err('No pudimos cargar tu pedido', 'Puede ser la señal de tu teléfono o un enlace desactivado. Revisa tu conexión e inténtalo de nuevo.');
+      const b = document.createElement('button');
+      b.className = 'retry'; b.textContent = 'Reintentar';
+      b.addEventListener('click', () => { $app.innerHTML = '<div class="skel">Cargando tu pedido…</div>'; cargar(true); });
+      $app.querySelector('.err').appendChild(b);
+    }
     return; // en refrescos silenciosos no borramos lo que ya se ve
   }
+  hayPintado = true;
+  if (!demo) cacheGuardar(data);
   pintar(data);
 }
 
+// La última copia buena pinta AL INSTANTE (si existe); lo fresco la reemplaza.
+const previa = demo ? null : cacheLeer();
+if (previa && previa.ot) { hayPintado = true; pintar(previa, true); }
 cargar(true);
 setInterval(() => cargar(false), 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(false); });
