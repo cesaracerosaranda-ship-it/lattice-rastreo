@@ -53,6 +53,7 @@
   .av .t { font-size: var(--t-cuerpo); color: var(--txt); line-height: 1.45; }
   .av .f { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt4); margin-top: 4px; }
   .av.nuevo .t::before { content: '●'; color: var(--gold); font-size: 8px; margin-right: 7px; vertical-align: 2px; }
+  .av .av-img { width: 100%; border-radius: 9px; margin-top: 8px; display: block; border: 1px solid var(--line); }
 
   /* piezas del pedido */
   .pz { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: var(--t-cuerpo); }
@@ -276,7 +277,8 @@ function pintar(data, deCache) {
     ${notas.length ? `<div class="card">
       <div class="sec">AVANCES DEL TALLER</div>
       ${notas.map((n, i) => `<div class="av ${i === 0 ? 'nuevo' : ''}">
-        <div class="t">${esc(n.t || '')}</div>
+        <div class="t">${esc(n.t || (n.img ? 'Así va tu pedido:' : ''))}</div>
+        ${n.img && /^https:\/\//.test(n.img) ? `<a href="${esc(n.img)}" target="_blank" rel="noopener"><img class="av-img" src="${esc(n.img)}" alt="Foto del avance de tu pedido" loading="lazy"></a>` : ''}
         <div class="f">${n.ts ? new Date(n.ts).toLocaleString('es-MX', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : ''}</div>
       </div>`).join('')}
     </div>` : ''}
