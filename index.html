@@ -19,45 +19,49 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
 <style>
   /* mismos tokens que el ERP (simulador-v3.css) — homogeneidad total de marca */
-  :root { --bg:#121212; --card:#1B1B1B; --card2:#161616; --line:#2c2c2c; --gold:#BDA76C; --txt:#fff; --txt2:#CFCFCF; --txt4:#8f8f8f; --green:#4ade80; }
+  :root { --bg:#121212; --card:#1B1B1B; --card2:#161616; --line:#2c2c2c; --gold:#BDA76C; --txt:#fff; --txt2:#CFCFCF; --txt4:#8f8f8f; --green:#4ade80;
+    /* escala tipográfica de la casa: CINCO tamaños, piso 11px (el mismo piso
+       que César confirmó para el ERP el 3-ago). Antes esta página tenía 13
+       tamaños distintos y 6 bajo el piso — en el teléfono del cliente. */
+    --t-micro:11px; --t-meta:12px; --t-cuerpo:13.5px; --t-sub:16px; --t-titulo:21px; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--txt); font-family: 'Manrope', sans-serif; min-height: 100vh; }
   header { background: var(--card); border-bottom: 2px solid var(--gold); padding: 16px; text-align: center; }
   header img { height: 30px; display: block; margin: 0 auto; }
   header .lw { color: var(--gold); font-weight: 800; letter-spacing: .34em; font-size: 15px; }
-  header .sub { color: var(--txt4); font-size: 9.5px; margin-top: 6px; letter-spacing: .18em; font-family: 'JetBrains Mono', monospace; }
+  header .sub { color: var(--txt4); font-size: var(--t-micro); margin-top: 6px; letter-spacing: .18em; font-family: 'JetBrains Mono', monospace; }
   main { max-width: 480px; margin: 0 auto; padding: 22px 16px 30px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 14px; }
-  .folio { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 12px; letter-spacing: .08em; }
-  .nombre { font-size: 20px; font-weight: 800; margin-top: 6px; }
-  .empresa { color: var(--txt4); font-size: 12px; margin-top: 2px; }
-  .estado { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; border: 1px solid var(--gold); color: var(--gold); border-radius: 8px; padding: 7px 14px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .1em; }
+  .folio { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: var(--t-meta); letter-spacing: .08em; }
+  .nombre { font-size: var(--t-titulo); font-weight: 800; margin-top: 6px; }
+  .empresa { color: var(--txt4); font-size: var(--t-meta); margin-top: 2px; }
+  .estado { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; border: 1px solid var(--gold); color: var(--gold); border-radius: 8px; padding: 7px 14px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); letter-spacing: .1em; }
   .estado.done { border-color: var(--green); color: var(--green); }
   .center { text-align: center; }
   .prog { height: 6px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 16px; }
   .prog .bar { height: 100%; background: var(--gold); border-radius: 4px; transition: width .4s ease; }
-  .entrega { margin-top: 14px; font-size: 12.5px; color: var(--txt2); }
+  .entrega { margin-top: 14px; font-size: var(--t-cuerpo); color: var(--txt2); }
   .entrega b { color: var(--txt); }
-  .entrega .cd { display: inline-block; margin-left: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gold); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
+  .entrega .cd { display: inline-block; margin-left: 6px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--gold); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
   .entrega .cd.hoy { color: var(--green); border-color: var(--green); }
-  .sec { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: .16em; margin-bottom: 12px; }
+  .sec { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); letter-spacing: .16em; margin-bottom: 12px; }
 
   /* avances del taller (lo que publicamos para el cliente) */
   .av { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
   .av:first-of-type { padding-top: 0; }
   .av:last-child { border-bottom: 0; padding-bottom: 0; }
-  .av .t { font-size: 13px; color: var(--txt); line-height: 1.45; }
-  .av .f { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); margin-top: 4px; }
+  .av .t { font-size: var(--t-cuerpo); color: var(--txt); line-height: 1.45; }
+  .av .f { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt4); margin-top: 4px; }
   .av.nuevo .t::before { content: '●'; color: var(--gold); font-size: 8px; margin-right: 7px; vertical-align: 2px; }
 
   /* piezas del pedido */
-  .pz { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 12.5px; }
+  .pz { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: var(--t-cuerpo); }
   .pz:last-of-type { border-bottom: 0; }
   .pz .d { color: var(--txt2); min-width: 0; }
   .pz .n { font-family: 'JetBrains Mono', monospace; color: var(--txt); white-space: nowrap; }
-  .pz-tot { display: flex; justify-content: space-between; padding-top: 9px; margin-top: 3px; border-top: 1px solid var(--line); font-size: 12px; color: var(--txt4); }
+  .pz-tot { display: flex; justify-content: space-between; padding-top: 9px; margin-top: 3px; border-top: 1px solid var(--line); font-size: var(--t-meta); color: var(--txt4); }
   .pz-tot b { color: var(--gold); font-family: 'JetBrains Mono', monospace; }
-  .mat { margin-top: 9px; font-size: 11px; color: var(--txt4); }
+  .mat { margin-top: 9px; font-size: var(--t-meta); color: var(--txt4); }
 
   /* viaje del pedido con fechas */
   .pasos { display: flex; flex-direction: column; gap: 0; }
@@ -67,10 +71,10 @@
   .paso.now .pin { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(189,167,108,.18); }
   .paso:not(:last-child)::after { content: ''; position: absolute; left: 7px; top: 27px; bottom: -9px; width: 2px; background: var(--line); }
   .paso.on:not(:last-child)::after { background: var(--gold); }
-  .paso .pl { font-size: 12.5px; color: var(--txt4); padding-top: 1px; flex: 1; }
+  .paso .pl { font-size: var(--t-cuerpo); color: var(--txt4); padding-top: 1px; flex: 1; }
   .paso.on .pl { color: var(--txt); }
   .paso.now .pl { color: var(--gold); font-weight: 700; }
-  .paso .pf { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); padding-top: 3px; white-space: nowrap; }
+  .paso .pf { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt4); padding-top: 3px; white-space: nowrap; }
 
   /* tus diseños — el dibujo real de lo que se está cortando (8-ago).
      El lienzo lleva una malla de puntos dorados MUY tenue: es la lámina
@@ -82,32 +86,46 @@
   .dz .lienzo { background: radial-gradient(rgba(189,167,108,.09) 1px, transparent 1.3px); background-size: 13px 13px; border-radius: 7px; padding: 6px; }
   .dz svg { width: 100%; height: 104px; display: block; }
   .dz-grid.uno .dz svg { height: 170px; }
-  .dz .dzn { font-size: 11.5px; color: var(--txt2); margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dz .dzm { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
+  .dz .dzn { font-size: var(--t-meta); font-weight: 600; color: var(--txt2); margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dz .dzm { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt4); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
   .dz .dzm b { color: var(--gold); font-weight: 600; }
   /* misma pieza en varias medidas: el dibujo UNA vez, las medidas en renglones */
-  .dzv { display: flex; justify-content: space-between; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--txt2); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .dzv { display: flex; justify-content: space-between; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt2); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
   .dzv:last-child { border-bottom: 0; padding-bottom: 0; }
   .dzv b { color: var(--gold); font-weight: 600; }
   .dzvs { margin-top: 7px; border-top: 1px solid var(--line); padding-top: 3px; }
-  .dz-nota { font-size: 10px; color: var(--txt4); margin-top: 10px; line-height: 1.5; }
+  .dz-nota { font-size: var(--t-micro); color: var(--txt4); margin-top: 10px; line-height: 1.5; }
+  /* carrusel (pedido de César 8-ago): un diseño a la vez con ASOMO del
+     siguiente — el asomo ES el aviso de que hay más, igual que el tablero
+     móvil de Producción. Scroll nativo con anclaje; sin autoplay: el cliente
+     está corroborando sus piezas, no viendo pasar anuncios. */
+  .dz-carrusel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin: 0 -20px; padding: 2px 20px 4px; }
+  .dz-carrusel::-webkit-scrollbar { display: none; }
+  .dz-carrusel .dz { flex: 0 0 82%; scroll-snap-align: center; }
+  .dz-carrusel .dz svg { height: 150px; }
+  .dz-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+  .dz-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: background .2s, transform .2s; }
+  .dz-dots span.on { background: var(--gold); transform: scale(1.3); }
   .pz-resto { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 4px; }
 
-  .err { text-align: center; padding: 60px 20px; color: var(--txt4); }
-  .err h2 { color: var(--txt); font-size: 16px; margin-bottom: 8px; }
+  .err { text-align: center; padding: 60px 20px; color: var(--txt4); font-size: var(--t-cuerpo); }
+  .err h2 { color: var(--txt); font-size: var(--t-sub); margin-bottom: 8px; }
   .err .retry { margin-top: 16px; background: var(--gold); color: #17150F; border: 0; border-radius: 9px; padding: 10px 22px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
-  .live { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); padding: 2px 0 10px; }
+  .live { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt4); padding: 2px 0 10px; }
   .live .dot { color: var(--green); animation: lat 2.4s ease-in-out infinite; }
   @keyframes lat { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
-  footer { text-align: center; color: var(--txt4); font-size: 9px; padding: 14px 16px 22px; letter-spacing: .04em; }
-  .skel { text-align: center; color: var(--txt4); padding: 60px 0; font-size: 12px; }
+  footer { text-align: center; color: var(--txt4); font-size: var(--t-micro); padding: 14px 16px 22px; letter-spacing: .04em; }
+  .skel { text-align: center; color: var(--txt4); padding: 60px 0; font-size: var(--t-meta); }
+  /* avance de corte — venía con colores de TEMA CLARO (gris #6B6B6B y crema
+     #FBF7EC) sobre las cards oscuras: la barra era casi invisible. Detectado
+     en la auditoría tipográfica del 8-ago; tokens de la casa. */
   .corte-av { margin: 12px 0 4px; }
-  .corte-av .ca-bar { height: 8px; border-radius: 999px; background: rgba(0,0,0,.07); overflow: hidden; }
+  .corte-av .ca-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
   .corte-av .ca-bar > div { height: 100%; background: linear-gradient(90deg, #BDA76C, #D9C48E); border-radius: 999px; transition: width .5s ease; }
-  .corte-av .ca-txt { font-size: 12.5px; color: #6B6B6B; margin-top: 7px; }
-  .corte-av .ca-txt b { color: #8A7233; font-size: 15px; }
-  .mat-nota { margin: 12px 0 2px; font-size: 12.5px; line-height: 1.6; color: #6B6B6B;
-    background: #FBF7EC; border: 1px solid rgba(189,167,108,.35); border-radius: 9px; padding: 10px 13px; }
+  .corte-av .ca-txt { font-size: var(--t-cuerpo); color: var(--txt2); margin-top: 7px; }
+  .corte-av .ca-txt b { color: var(--gold); font-size: var(--t-sub); }
+  .mat-nota { margin: 12px 0 2px; font-size: var(--t-cuerpo); line-height: 1.6; color: var(--txt2);
+    background: rgba(189,167,108,.08); border: 1px solid rgba(189,167,108,.35); border-radius: 9px; padding: 10px 13px; }
 </style>
 </head>
 <body>
@@ -217,6 +235,12 @@ function pintar(data, deCache) {
   const notas = Array.isArray(ot.notas) ? ot.notas.slice().reverse() : [];
   const piezas = Array.isArray(ot.piezas_lista) ? ot.piezas_lista : [];
 
+  // el refresco de 60 s re-pinta todo: si el cliente estaba viendo el tercer
+  // diseño, se le respeta el lugar — que la página se actualice no significa
+  // que le arrebate el carrusel de las manos
+  const dzcAntes = document.getElementById('dzc');
+  const dzcScroll = dzcAntes ? dzcAntes.scrollLeft : 0;
+
   $app.innerHTML = `
     <div class="card center">
       <div class="folio">${esc(ot.folio_ot)}</div>
@@ -289,7 +313,7 @@ function pintar(data, deCache) {
       const algunaRecortada = dz.some(x => x.viz.dib && x.viz.n && x.viz.dib < x.viz.n);
       return `<div class="card">
         <div class="sec">TU PEDIDO${grupos.length ? ' · LO QUE ESTAMOS CORTANDO' : ''}</div>
-        ${grupos.length ? `<div class="dz-grid ${grupos.length === 1 ? 'uno' : ''}">
+        ${grupos.length ? `<div class="${grupos.length === 1 ? 'dz-grid uno' : 'dz-carrusel'}" ${grupos.length > 1 ? 'id="dzc" role="region" aria-label="Tus diseños"' : ''}>
           ${grupos.map(g => {
             const svg = vizSVG(g.viz); if (!svg) return '';
             const nTot = g.vars.reduce((s, v) => s + v.n, 0);
@@ -301,7 +325,7 @@ function pintar(data, deCache) {
                    <div class="dzvs">${g.vars.map(v => `<div class="dzv"><span>${v.mm}</span><b>×${v.n}</b></div>`).join('')}</div>`}
             </div>`;
           }).join('')}
-        </div>` : ''}
+        </div>${grupos.length > 1 ? `<div class="dz-dots" id="dzd">${grupos.map((_, i) => `<span class="${i === 0 ? 'on' : ''}"></span>`).join('')}</div>` : ''}` : ''}
         ${resto.length ? `<div class="${grupos.length ? 'pz-resto' : ''}">
           ${resto.map(p => `<div class="pz"><span class="d">${esc(p.d || 'Pieza')}</span><span class="n">×${+p.n || 0}</span></div>`).join('')}
         </div>` : ''}
@@ -321,6 +345,19 @@ function pintar(data, deCache) {
       </div>
     </div>
   `;
+  const dzc = document.getElementById('dzc');
+  if (dzc) {
+    if (dzcScroll) dzc.scrollLeft = dzcScroll;
+    const dots = [...document.querySelectorAll('#dzd span')];
+    const marcar = () => {
+      const ancho = dzc.firstElementChild ? dzc.firstElementChild.getBoundingClientRect().width + 10 : 1;
+      const i = Math.min(dots.length - 1, Math.max(0, Math.round(dzc.scrollLeft / ancho)));
+      dots.forEach((d, j) => d.classList.toggle('on', j === i));
+    };
+    dzc.addEventListener('scroll', () => requestAnimationFrame(marcar), { passive: true });
+    marcar();
+  }
+
   $live.innerHTML = deCache
     ? '<span class="dot" style="color:var(--gold)">●</span> mostrando la última copia · buscando lo más reciente…'
     : `<span class="dot">●</span> EN VIVO · actualizado ${new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })} · se refresca solo`;
