@@ -85,7 +85,13 @@
   .dz .dzn { font-size: 11.5px; color: var(--txt2); margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dz .dzm { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--txt4); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
   .dz .dzm b { color: var(--gold); font-weight: 600; }
+  /* misma pieza en varias medidas: el dibujo UNA vez, las medidas en renglones */
+  .dzv { display: flex; justify-content: space-between; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--txt2); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .dzv:last-child { border-bottom: 0; padding-bottom: 0; }
+  .dzv b { color: var(--gold); font-weight: 600; }
+  .dzvs { margin-top: 7px; border-top: 1px solid var(--line); padding-top: 3px; }
   .dz-nota { font-size: 10px; color: var(--txt4); margin-top: 10px; line-height: 1.5; }
+  .pz-resto { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 4px; }
 
   .err { text-align: center; padding: 60px 20px; color: var(--txt4); }
   .err h2 { color: var(--txt); font-size: 16px; margin-bottom: 8px; }
@@ -252,34 +258,58 @@ function pintar(data, deCache) {
     </div>` : ''}
 
     ${(() => {
-      /* TUS DISEÑOS (8-ago): el mismo dibujo que el cliente vio en su
-         cotización, ahora en su rastreo — se corta EXACTAMENTE esto.
-         Solo aparece si la cotización trae DXF (el RPC v41 manda el viz);
-         un pedido capturado a mano simplemente no muestra la galería. */
+      /* TU PEDIDO (8-ago, 2ª iteración — la observación fue de César): antes
+         eran DOS tarjetas — seis dibujos idénticos con su medida, y abajo una
+         lista con el mismo nombre otras seis veces. El cliente corrobora LA
+         FORMA una sola vez y LAS MEDIDAS una por una; obligarlo a lo contrario
+         es ruido. Ahora es UNA tarjeta: cada forma se dibuja una vez (agrupada
+         por su GEOMETRÍA, no por el nombre — dos diseños distintos que se
+         llamen igual no se mezclan) y sus medidas van como renglones. Lo que
+         no trae dibujo (captura a mano) sigue como renglón clásico. */
       const dz = (Array.isArray(ot.disenos) ? ot.disenos : []).filter(x => x && x.viz && x.viz.c && x.viz.c.length);
-      if (!dz.length) return '';
+      const firma = v => {
+        const w = v.bb.x1 - v.bb.x0, h = v.bb.y1 - v.bb.y0;
+        return (h > 0 ? (w / h).toFixed(1) : '?') + '|' + v.c.map(k => `${k.i}${k.z}:${k.p.length}`).join(',');
+      };
+      const grupos = [];
+      dz.forEach(x => {
+        const f = firma(x.viz);
+        let g = grupos.find(y => y.f === f);
+        if (!g) { g = { f, nombre: x.d || 'Pieza', viz: x.viz, vars: [] }; grupos.push(g); }
+        const bb = x.viz.bb;
+        g.vars.push({ d: x.d || '', n: +x.n || 1, mm: `${Math.round(bb.x1 - bb.x0)} × ${Math.round(bb.y1 - bb.y0)} mm` });
+      });
+      // lo ya representado por un dibujo no se repite en la lista de abajo
+      const resto = piezas.slice();
+      grupos.forEach(g => g.vars.forEach(v => {
+        const i = resto.findIndex(p => (p.d || '') === v.d && +p.n === +v.n);
+        if (i >= 0) resto.splice(i, 1);
+      }));
+      if (!grupos.length && !resto.length) return '';
       const algunaRecortada = dz.some(x => x.viz.dib && x.viz.n && x.viz.dib < x.viz.n);
       return `<div class="card">
-        <div class="sec">TUS DISEÑOS · LO QUE ESTAMOS CORTANDO</div>
-        <div class="dz-grid ${dz.length === 1 ? 'uno' : ''}">
-          ${dz.map(x => {
-            const svg = vizSVG(x.viz); if (!svg) return '';
-            const bb = x.viz.bb, mm = `${Math.round(bb.x1 - bb.x0)} × ${Math.round(bb.y1 - bb.y0)} mm`;
+        <div class="sec">TU PEDIDO${grupos.length ? ' · LO QUE ESTAMOS CORTANDO' : ''}</div>
+        ${grupos.length ? `<div class="dz-grid ${grupos.length === 1 ? 'uno' : ''}">
+          ${grupos.map(g => {
+            const svg = vizSVG(g.viz); if (!svg) return '';
+            const nTot = g.vars.reduce((s, v) => s + v.n, 0);
             return `<div class="dz"><div class="lienzo">${svg}</div>
-              <div class="dzn">${esc(x.d || 'Pieza')}</div>
-              <div class="dzm"><span>${mm}</span><b>×${+x.n || 1}</b></div></div>`;
+              <div class="dzn">${esc(g.nombre)}</div>
+              ${g.vars.length === 1
+                ? `<div class="dzm"><span>${g.vars[0].mm}</span><b>×${g.vars[0].n}</b></div>`
+                : `<div class="dzm"><span>misma pieza · ${g.vars.length} medidas</span><b>×${nTot}</b></div>
+                   <div class="dzvs">${g.vars.map(v => `<div class="dzv"><span>${v.mm}</span><b>×${v.n}</b></div>`).join('')}</div>`}
+            </div>`;
           }).join('')}
-        </div>
+        </div>` : ''}
+        ${resto.length ? `<div class="${grupos.length ? 'pz-resto' : ''}">
+          ${resto.map(p => `<div class="pz"><span class="d">${esc(p.d || 'Pieza')}</span><span class="n">×${+p.n || 0}</span></div>`).join('')}
+        </div>` : ''}
+        <div class="pz-tot"><span>Total de piezas</span><b>${ot.piezas || piezas.reduce((s, p) => s + (+p.n || 0), 0)}</b></div>
+        ${ot.material ? `<div class="mat">Material: ${esc(matBonito(ot.material))}</div>` : ''}
         ${algunaRecortada ? '<div class="dz-nota">Vista simplificada del dibujo — el corte usa el diseño completo, con todo su detalle.</div>' : ''}
       </div>`;
     })()}
-
-    ${piezas.length ? `<div class="card">
-      <div class="sec">TU PEDIDO</div>
-      ${piezas.map(p => `<div class="pz"><span class="d">${esc(p.d || 'Pieza')}</span><span class="n">×${+p.n || 0}</span></div>`).join('')}
-      <div class="pz-tot"><span>Total de piezas</span><b>${ot.piezas || piezas.reduce((s, p) => s + (+p.n || 0), 0)}</b></div>
-      ${ot.material ? `<div class="mat">Material: ${esc(matBonito(ot.material))}</div>` : ''}
-    </div>` : ''}
 
     <div class="card">
       <div class="sec">EL VIAJE DE TU PEDIDO</div>
