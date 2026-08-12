@@ -62,13 +62,23 @@
   .av-nuevo { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: #17150F; background: var(--gold); border-radius: 20px; padding: 2px 9px; font-weight: 700; letter-spacing: .04em; }
   .av-chev { color: var(--gold); font-size: 12px; width: 14px; text-align: center; }
   .av-lista { margin-top: 14px; }
-  .av-cerrado { margin-top: 10px; font-size: var(--t-meta); color: var(--txt4); }
+  .av-cerrado { margin-top: 12px; }
+  /* adelanto del último comentario en UNA línea: se corta con "…" al ancho */
+  .av-prev { font-size: var(--t-cuerpo); color: var(--txt2); line-height: 1.4;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .av-prev-ic { color: var(--gold); }
+  .av-prev-cta { margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro);
+    color: var(--gold); letter-spacing: .04em; }
 
   /* piezas del pedido */
   .pz { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: var(--t-cuerpo); }
   .pz:last-of-type { border-bottom: 0; }
-  .pz .d { color: var(--txt2); min-width: 0; }
+  .pz .d { color: var(--txt2); min-width: 0; display: flex; align-items: center; gap: 8px; }
   .pz .n { font-family: 'JetBrains Mono', monospace; color: var(--txt); white-space: nowrap; }
+  /* pieza YA lista (el taller la marcó cortada en Producción) */
+  .pz.lista .d { color: var(--txt); }
+  .pz-lista { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--green);
+    border: 1px solid rgba(74,222,128,.4); border-radius: 20px; padding: 1px 8px; letter-spacing: .04em; white-space: nowrap; }
   .pz-tot { display: flex; justify-content: space-between; padding-top: 9px; margin-top: 3px; border-top: 1px solid var(--line); font-size: var(--t-meta); color: var(--txt4); }
   .pz-tot b { color: var(--gold); font-family: 'JetBrains Mono', monospace; }
   .mat { margin-top: 9px; font-size: var(--t-meta); color: var(--txt4); }
@@ -99,6 +109,14 @@
   .dz .dzn { font-size: var(--t-meta); font-weight: 600; color: var(--txt2); margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dz .dzm { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt4); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
   .dz .dzm b { color: var(--gold); font-weight: 600; }
+  /* diseño YA listo — borde verde + sello en el lienzo + etiqueta ✓ LISTA */
+  .dz.ok { border-color: rgba(74,222,128,.45); }
+  .dz .lienzo { position: relative; }
+  .dz .lienzo-ok { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--green); color: #10251a; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .dz-lista { margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); font-weight: 700;
+    color: var(--green); letter-spacing: .06em; }
+  .dz-lista.parcial { color: var(--gold); font-weight: 600; }
   /* misma pieza en varias medidas: el dibujo UNA vez, las medidas en renglones */
   .dzv { display: flex; justify-content: space-between; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt2); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
   .dzv:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -185,7 +203,8 @@ async function traer() {
   if (demo) {
     return { ot: { folio_ot: 'OT-LW-2026-0155', estado: 'en_proceso', fecha_compromiso: new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10), cliente: 'Kato Gutierrez', empresa: '', piezas: 28, material: 'acero C16', tiene_acabado: true, updated_at: new Date().toISOString(),
       notas: [ { t: 'Recibimos tu anticipo — tu material ya está apartado.', ts: new Date(Date.now() - 2 * 864e5).toISOString() }, { t: 'Tus piezas ya están en la mesa de corte, va quedando muy bien 🔥', ts: new Date(Date.now() - 36e5).toISOString() } ],
-      piezas_lista: [ { d: 'Placa base 300×600 mm', n: 12 }, { d: 'Soporte en L cal. 16', n: 10 }, { d: 'Tapa perforada decorativa', n: 6 } ] },
+      piezas_lista: [ { d: 'Placa base 300×600 mm', n: 12 }, { d: 'Soporte en L cal. 16', n: 10 }, { d: 'Tapa perforada decorativa', n: 6 } ],
+      piezas_listas: [ 'Tapa perforada decorativa|6' ] },
       eventos: [ { de: 'pendiente', a: 'en_proceso', created_at: new Date(Date.now() - 36e5 * 5).toISOString() }, { de: null, a: 'pendiente', created_at: new Date(Date.now() - 864e5).toISOString() } ] };
   }
   // Timeout propio: en el navegador embebido de WhatsApp un fetch puede
@@ -302,6 +321,11 @@ function pintar(data, deCache) {
       // Un único avance sí se muestra directo — no vale la pena ocultar uno.
       let abierto = (avAbierto === null) ? (notas.length === 1) : avAbierto;
       if (abierto) { avAbierto = true; if (masNuevo > visto) { try { localStorage.setItem(CLK, String(masNuevo)); } catch (e) {} } }
+      // adelanto del ÚLTIMO comentario cuando está cerrada (César 11-ago): en vez
+      // de un genérico, se asoma el inicio de lo que el taller dejó; el CSS lo
+      // corta con "…" al ancho de la columna (una sola línea).
+      const ult = notas[0] || {};
+      const adelanto = (ult.t || (ult.img ? 'Nueva foto de tu pedido' : 'Avance publicado')).trim();
       const lista = notas.map(n => `<div class="av ${tsDe(n) > visto ? 'nuevo' : ''}">
         <div class="t">${esc(n.t || (n.img ? 'Así va tu pedido:' : ''))}</div>
         ${n.img && /^https:\/\//.test(n.img) ? `<a href="${esc(n.img)}" target="_blank" rel="noopener"><img class="av-img" src="${esc(n.img)}" alt="Foto del avance de tu pedido" loading="lazy"></a>` : ''}
@@ -314,7 +338,10 @@ function pintar(data, deCache) {
           <span class="av-chev">${abierto ? '▴' : '▾'}</span>
         </div>
         ${abierto ? `<div class="av-lista">${lista}</div>`
-          : `<div class="av-cerrado">Toca para ver ${notas.length === 1 ? 'el avance' : 'los ' + notas.length + ' avances'}${nuevos > 0 ? ' — hay novedades' : ''}.</div>`}
+          : `<div class="av-cerrado">
+              <div class="av-prev">${ult.img ? '<span class="av-prev-ic">▣</span> ' : ''}${esc(adelanto)}</div>
+              <div class="av-prev-cta">Toca para ver ${notas.length === 1 ? 'el avance completo' : 'los ' + notas.length + ' avances'}${nuevos > 0 ? ' · hay novedades' : ''}</div>
+            </div>`}
       </div>`;
     })()}
 
@@ -328,6 +355,10 @@ function pintar(data, deCache) {
          llamen igual no se mezclan) y sus medidas van como renglones. Lo que
          no trae dibujo (captura a mano) sigue como renglón clásico. */
       const dz = (Array.isArray(ot.disenos) ? ot.disenos : []).filter(x => x && x.viz && x.viz.c && x.viz.c.length);
+      // piezas ya cortadas: el taller las marca en Producción; aquí cada diseño
+      // o renglón cuya llave 'descripción|cantidad' esté en la lista lleva ✓ LISTA
+      const listasK = new Set(Array.isArray(ot.piezas_listas) ? ot.piezas_listas : []);
+      const esLista = (d, n) => listasK.has((d || '') + '|' + (+n || 0));
       const firma = v => {
         const w = v.bb.x1 - v.bb.x0, h = v.bb.y1 - v.bb.y0;
         return (h > 0 ? (w / h).toFixed(1) : '?') + '|' + v.c.map(k => `${k.i}${k.z}:${k.p.length}`).join(',');
@@ -354,8 +385,13 @@ function pintar(data, deCache) {
           ${grupos.map(g => {
             const svg = vizSVG(g.viz); if (!svg) return '';
             const nTot = g.vars.reduce((s, v) => s + v.n, 0);
-            return `<div class="dz"><div class="lienzo">${svg}</div>
+            const hechas = g.vars.filter(v => esLista(v.d, v.n)).length;
+            const badge = !hechas ? ''
+              : hechas >= g.vars.length ? '<div class="dz-lista">✓ LISTA</div>'
+              : `<div class="dz-lista parcial">✓ ${hechas} de ${g.vars.length} listas</div>`;
+            return `<div class="dz ${hechas >= g.vars.length ? 'ok' : ''}"><div class="lienzo">${svg}${hechas >= g.vars.length ? '<span class="lienzo-ok">✓</span>' : ''}</div>
               <div class="dzn">${esc(g.nombre)}</div>
+              ${badge}
               ${g.vars.length === 1
                 ? `<div class="dzm"><span>${g.vars[0].mm}</span><b>×${g.vars[0].n}</b></div>`
                 : `<div class="dzm"><span>misma pieza · ${g.vars.length} medidas</span><b>×${nTot}</b></div>
@@ -364,7 +400,7 @@ function pintar(data, deCache) {
           }).join('')}
         </div>${grupos.length > 1 ? `<div class="dz-dots" id="dzd">${grupos.map((_, i) => `<span class="${i === 0 ? 'on' : ''}"></span>`).join('')}</div>` : ''}` : ''}
         ${resto.length ? `<div class="${grupos.length ? 'pz-resto' : ''}">
-          ${resto.map(p => `<div class="pz"><span class="d">${esc(p.d || 'Pieza')}</span><span class="n">×${+p.n || 0}</span></div>`).join('')}
+          ${resto.map(p => { const ok = esLista(p.d, p.n); return `<div class="pz ${ok ? 'lista' : ''}"><span class="d">${esc(p.d || 'Pieza')}${ok ? '<span class="pz-lista">✓ LISTA</span>' : ''}</span><span class="n">×${+p.n || 0}</span></div>`; }).join('')}
         </div>` : ''}
         <div class="pz-tot"><span>Total de piezas</span><b>${ot.piezas || piezas.reduce((s, p) => s + (+p.n || 0), 0)}</b></div>
         ${ot.material ? `<div class="mat">Material: ${esc(matBonito(ot.material))}</div>` : ''}
