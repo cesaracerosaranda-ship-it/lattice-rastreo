@@ -46,13 +46,19 @@
   .entrega .cd.hoy { color: var(--green); border-color: var(--green); }
   .sec { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); letter-spacing: .16em; margin-bottom: 12px; }
 
-  /* avances del taller (lo que publicamos para el cliente) */
-  .av { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+  /* avances del taller (lo que publicamos para el cliente) — cada fila:
+     palomita · texto · cámara si trae foto (11-ago, César) */
+  .av { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
   .av:first-of-type { padding-top: 0; }
   .av:last-child { border-bottom: 0; padding-bottom: 0; }
+  .av-chk { flex: none; width: 18px; height: 18px; border-radius: 50%; margin-top: 1px;
+    background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.45); color: var(--green);
+    font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .av.nuevo .av-chk, .av-chk.oro { background: rgba(189,167,108,.14); border-color: rgba(189,167,108,.55); color: var(--gold); }
+  .av-cuerpo { flex: 1; min-width: 0; }
+  .av-cam { flex: none; color: var(--gold); opacity: .75; margin-top: 2px; }
   .av .t { font-size: var(--t-cuerpo); color: var(--txt); line-height: 1.45; }
   .av .f { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt4); margin-top: 4px; }
-  .av.nuevo .t::before { content: '●'; color: var(--gold); font-size: 8px; margin-right: 7px; vertical-align: 2px; }
   .av .av-img { width: 100%; border-radius: 9px; margin-top: 8px; display: block; border: 1px solid var(--line); }
   /* avances colapsables (11-ago): cabecera tocable + contador de novedades */
   .av-head { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
@@ -63,11 +69,14 @@
   .av-chev { color: var(--gold); font-size: 12px; width: 14px; text-align: center; }
   .av-lista { margin-top: 14px; }
   .av-cerrado { margin-top: 12px; }
-  /* adelanto del último comentario en UNA línea: se corta con "…" al ancho */
-  .av-prev { font-size: var(--t-cuerpo); color: var(--txt2); line-height: 1.4;
+  /* adelanto del último comentario en UNA línea: palomita + texto con "…" +
+     cámara si trae foto; el llamado se alinea con el texto, no con la palomita */
+  .av-prev { display: flex; align-items: center; gap: 10px; }
+  .av-prev .av-chk { margin-top: 0; }
+  .av-prev-t { flex: 1; min-width: 0; font-size: var(--t-cuerpo); color: var(--txt2); line-height: 1.4;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .av-prev-ic { color: var(--gold); }
-  .av-prev-cta { margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro);
+  .av-prev .av-cam { margin-top: 0; }
+  .av-prev-cta { margin: 6px 0 0 28px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro);
     color: var(--gold); letter-spacing: .04em; }
 
   /* piezas del pedido */
@@ -79,6 +88,7 @@
   .pz.lista .d { color: var(--txt); }
   .pz-lista { font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--green);
     border: 1px solid rgba(74,222,128,.4); border-radius: 20px; padding: 1px 8px; letter-spacing: .04em; white-space: nowrap; }
+  .pz-lista.parc { color: var(--gold); border-color: rgba(189,167,108,.45); }
   .pz-tot { display: flex; justify-content: space-between; padding-top: 9px; margin-top: 3px; border-top: 1px solid var(--line); font-size: var(--t-meta); color: var(--txt4); }
   .pz-tot b { color: var(--gold); font-family: 'JetBrains Mono', monospace; }
   .mat { margin-top: 9px; font-size: var(--t-meta); color: var(--txt4); }
@@ -117,6 +127,9 @@
   .dz-lista { margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); font-weight: 700;
     color: var(--green); letter-spacing: .06em; }
   .dz-lista.parcial { color: var(--gold); font-weight: 600; }
+  /* estado por medida: ✓ esa medida completa · 1/3 en camino */
+  .dzv-ok { color: var(--green); font-weight: 700; font-size: var(--t-micro); }
+  .dzv-parc { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); }
   /* misma pieza en varias medidas: el dibujo UNA vez, las medidas en renglones */
   .dzv { display: flex; justify-content: space-between; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: var(--t-micro); color: var(--txt2); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
   .dzv:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -195,6 +208,9 @@ const fmtDH = s => new Date(s).toLocaleDateString('es-MX', { day: '2-digit', mon
    cliente se le habla con el nombre del documento. Mismo mapa que el ERP. */
 const MAT_NOMBRE = { acero: 'Acero al carbón', inoxidable: 'Inoxidable T304', inox316: 'Inoxidable T316', placaGruesa: 'Placa de acero', aluminio: 'Aluminio 3003' };
 const matBonito = s => String(s || '').split(' · ').map(t => t.replace(/^(\S+)/, k => MAT_NOMBRE[k] || k)).join(' · ');
+/* cámara para los avances con foto — SVG en línea (un emoji se ve distinto en
+   cada sistema; este hereda el color de la casa) */
+const CAM_SVG = '<svg class="av-cam" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Con foto"><path d="M4 8.6h3.1l2.1-2.6h5.6l2.1 2.6H20a.9.9 0 0 1 .9.9v8.6a.9.9 0 0 1-.9.9H4a.9.9 0 0 1-.9-.9V9.5a.9.9 0 0 1 .9-.9z"/><circle cx="12" cy="13.4" r="3.1"/></svg>';
 
 const token = new URLSearchParams(location.search).get('t');
 const demo = new URLSearchParams(location.search).has('demo');
@@ -204,7 +220,7 @@ async function traer() {
     return { ot: { folio_ot: 'OT-LW-2026-0155', estado: 'en_proceso', fecha_compromiso: new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10), cliente: 'Kato Gutierrez', empresa: '', piezas: 28, material: 'acero C16', tiene_acabado: true, updated_at: new Date().toISOString(),
       notas: [ { t: 'Recibimos tu anticipo — tu material ya está apartado.', ts: new Date(Date.now() - 2 * 864e5).toISOString() }, { t: 'Tus piezas ya están en la mesa de corte, va quedando muy bien 🔥', ts: new Date(Date.now() - 36e5).toISOString() } ],
       piezas_lista: [ { d: 'Placa base 300×600 mm', n: 12 }, { d: 'Soporte en L cal. 16', n: 10 }, { d: 'Tapa perforada decorativa', n: 6 } ],
-      piezas_listas: [ 'Tapa perforada decorativa|6' ] },
+      piezas_listas: [ { k: 'Tapa perforada decorativa|6', n: 6 }, { k: 'Soporte en L cal. 16|10', n: 4 } ] },
       eventos: [ { de: 'pendiente', a: 'en_proceso', created_at: new Date(Date.now() - 36e5 * 5).toISOString() }, { de: null, a: 'pendiente', created_at: new Date(Date.now() - 864e5).toISOString() } ] };
   }
   // Timeout propio: en el navegador embebido de WhatsApp un fetch puede
@@ -326,11 +342,21 @@ function pintar(data, deCache) {
       // corta con "…" al ancho de la columna (una sola línea).
       const ult = notas[0] || {};
       const adelanto = (ult.t || (ult.img ? 'Nueva foto de tu pedido' : 'Avance publicado')).trim();
-      const lista = notas.map(n => `<div class="av ${tsDe(n) > visto ? 'nuevo' : ''}">
-        <div class="t">${esc(n.t || (n.img ? 'Así va tu pedido:' : ''))}</div>
-        ${n.img && /^https:\/\//.test(n.img) ? `<a href="${esc(n.img)}" target="_blank" rel="noopener"><img class="av-img" src="${esc(n.img)}" alt="Foto del avance de tu pedido" loading="lazy"></a>` : ''}
-        <div class="f">${n.ts ? new Date(n.ts).toLocaleString('es-MX', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : ''}</div>
-      </div>`).join('');
+      /* cada avance: palomita a la izquierda (dorada si es nuevo, verde si ya
+         se vio), cuerpo al centro, y cámara a la DERECHA cuando trae foto
+         (César 11-ago: "palomita tipo ✅ y símbolo de cámara del lado derecho") */
+      const lista = notas.map(n => {
+        const conFoto = n.img && /^https:\/\//.test(n.img);
+        return `<div class="av ${tsDe(n) > visto ? 'nuevo' : ''}">
+        <span class="av-chk">✓</span>
+        <div class="av-cuerpo">
+          <div class="t">${esc(n.t || (conFoto ? 'Así va tu pedido:' : ''))}</div>
+          ${conFoto ? `<a href="${esc(n.img)}" target="_blank" rel="noopener"><img class="av-img" src="${esc(n.img)}" alt="Foto del avance de tu pedido" loading="lazy"></a>` : ''}
+          <div class="f">${n.ts ? new Date(n.ts).toLocaleString('es-MX', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+        </div>
+        ${conFoto ? CAM_SVG : ''}
+      </div>`;
+      }).join('');
       return `<div class="card">
         <div class="av-head" id="av-toggle" role="button" tabindex="0" aria-expanded="${abierto}">
           <span class="sec av-titulo">AVANCES DEL TALLER</span><span class="grow"></span>
@@ -339,7 +365,7 @@ function pintar(data, deCache) {
         </div>
         ${abierto ? `<div class="av-lista">${lista}</div>`
           : `<div class="av-cerrado">
-              <div class="av-prev">${ult.img ? '<span class="av-prev-ic">▣</span> ' : ''}${esc(adelanto)}</div>
+              <div class="av-prev"><span class="av-chk ${nuevos > 0 ? 'oro' : ''}">✓</span><span class="av-prev-t">${esc(adelanto)}</span>${ult.img && /^https:\/\//.test(ult.img) ? CAM_SVG : ''}</div>
               <div class="av-prev-cta">Toca para ver ${notas.length === 1 ? 'el avance completo' : 'los ' + notas.length + ' avances'}${nuevos > 0 ? ' · hay novedades' : ''}</div>
             </div>`}
       </div>`;
@@ -355,10 +381,38 @@ function pintar(data, deCache) {
          llamen igual no se mezclan) y sus medidas van como renglones. Lo que
          no trae dibujo (captura a mano) sigue como renglón clásico. */
       const dz = (Array.isArray(ot.disenos) ? ot.disenos : []).filter(x => x && x.viz && x.viz.c && x.viz.c.length);
-      // piezas ya cortadas: el taller las marca en Producción; aquí cada diseño
-      // o renglón cuya llave 'descripción|cantidad' esté en la lista lleva ✓ LISTA
-      const listasK = new Set(Array.isArray(ot.piezas_listas) ? ot.piezas_listas : []);
-      const esLista = (d, n) => listasK.has((d || '') + '|' + (+n || 0));
+      /* piezas ya cortadas: el taller lo captura en Producción por fila, con
+         avance parcial. Formatos en piezas_listas: string 'desc|n' (v43.0 =
+         fila completa) u objeto {k:'desc|AxB|n', n:cuántas} (v43.1, la llave
+         lleva la MEDIDA para que dos variantes del mismo diseño no se
+         confundan). `tomar` CONSUME del saldo — así dos variantes idénticas
+         se reparten lo capturado en vez de palomearse las dos con una. */
+      const saldo = new Map();
+      (Array.isArray(ot.piezas_listas) ? ot.piezas_listas : []).forEach(e => {
+        let k = null, n = 0;
+        if (typeof e === 'string') { k = e; n = +e.slice(e.lastIndexOf('|') + 1) || 0; }
+        else if (e && typeof e === 'object' && typeof e.k === 'string') { k = e.k; n = +e.n || 0; }
+        if (k && n > 0) saldo.set(k, (saldo.get(k) || 0) + n);
+      });
+      const tomar = (claves, n) => {
+        for (const k of claves) {
+          const c = saldo.get(k) || 0;
+          if (c > 0) { const t = Math.min(n, c); saldo.set(k, c - t); return t; }
+        }
+        return 0;
+      };
+      const tomarResto = (d, n) => {
+        // renglón sin dibujo: llave exacta 'desc|n' o, si el taller la marcó
+        // con medida y aquí no la hay, cualquier llave desc|…|n del mismo par
+        const t = tomar([(d || '') + '|' + (+n || 0)], +n || 0);
+        if (t) return t;
+        for (const [k, c] of saldo) {
+          if (c > 0 && k.startsWith((d || '') + '|') && k.endsWith('|' + (+n || 0))) {
+            const q = Math.min(+n || 0, c); saldo.set(k, c - q); return q;
+          }
+        }
+        return 0;
+      };
       const firma = v => {
         const w = v.bb.x1 - v.bb.x0, h = v.bb.y1 - v.bb.y0;
         return (h > 0 ? (w / h).toFixed(1) : '?') + '|' + v.c.map(k => `${k.i}${k.z}:${k.p.length}`).join(',');
@@ -368,9 +422,12 @@ function pintar(data, deCache) {
         const f = firma(x.viz);
         let g = grupos.find(y => y.f === f);
         if (!g) { g = { f, nombre: x.d || 'Pieza', viz: x.viz, vars: [] }; grupos.push(g); }
-        const bb = x.viz.bb;
-        g.vars.push({ d: x.d || '', n: +x.n || 1, mm: `${Math.round(bb.x1 - bb.x0)} × ${Math.round(bb.y1 - bb.y0)} mm` });
+        const bb = x.viz.bb, w = Math.round(bb.x1 - bb.x0), h = Math.round(bb.y1 - bb.y0);
+        g.vars.push({ d: x.d || '', n: +x.n || 1, w, h, mm: `${w} × ${h} mm` });
       });
+      // cuántas de cada variante están listas — en orden de pintado, para que
+      // dos variantes idénticas se repartan el saldo y no se dupliquen los ✓
+      grupos.forEach(g => g.vars.forEach(v => { v.cnt = tomar([`${v.d}|${v.w}×${v.h}|${v.n}`, `${v.d}|${v.n}`], v.n); }));
       // lo ya representado por un dibujo no se repite en la lista de abajo
       const resto = piezas.slice();
       grupos.forEach(g => g.vars.forEach(v => {
@@ -385,22 +442,30 @@ function pintar(data, deCache) {
           ${grupos.map(g => {
             const svg = vizSVG(g.viz); if (!svg) return '';
             const nTot = g.vars.reduce((s, v) => s + v.n, 0);
-            const hechas = g.vars.filter(v => esLista(v.d, v.n)).length;
-            const badge = !hechas ? ''
-              : hechas >= g.vars.length ? '<div class="dz-lista">✓ LISTA</div>'
-              : `<div class="dz-lista parcial">✓ ${hechas} de ${g.vars.length} listas</div>`;
-            return `<div class="dz ${hechas >= g.vars.length ? 'ok' : ''}"><div class="lienzo">${svg}${hechas >= g.vars.length ? '<span class="lienzo-ok">✓</span>' : ''}</div>
+            const done = g.vars.reduce((s, v) => s + v.cnt, 0);
+            const completo = g.vars.every(v => v.cnt >= v.n);
+            const badge = !done ? ''
+              : completo ? '<div class="dz-lista">✓ LISTA</div>'
+              : `<div class="dz-lista parcial">✓ ${done} de ${nTot} piezas listas</div>`;
+            // cada medida dice lo suyo: ✓ completa, 1/3 en camino, nada si no ha entrado
+            const marca = v => v.cnt >= v.n ? '<span class="dzv-ok">✓</span>'
+              : v.cnt > 0 ? `<span class="dzv-parc">${v.cnt}/${v.n}</span>` : '';
+            return `<div class="dz ${completo ? 'ok' : ''}"><div class="lienzo">${svg}${completo ? '<span class="lienzo-ok">✓</span>' : ''}</div>
               <div class="dzn">${esc(g.nombre)}</div>
               ${badge}
               ${g.vars.length === 1
-                ? `<div class="dzm"><span>${g.vars[0].mm}</span><b>×${g.vars[0].n}</b></div>`
+                ? `<div class="dzm"><span>${g.vars[0].mm}</span>${marca(g.vars[0])}<b>×${g.vars[0].n}</b></div>`
                 : `<div class="dzm"><span>misma pieza · ${g.vars.length} medidas</span><b>×${nTot}</b></div>
-                   <div class="dzvs">${g.vars.map(v => `<div class="dzv"><span>${v.mm}</span><b>×${v.n}</b></div>`).join('')}</div>`}
+                   <div class="dzvs">${g.vars.map(v => `<div class="dzv"><span>${v.mm}</span>${marca(v)}<b>×${v.n}</b></div>`).join('')}</div>`}
             </div>`;
           }).join('')}
         </div>${grupos.length > 1 ? `<div class="dz-dots" id="dzd">${grupos.map((_, i) => `<span class="${i === 0 ? 'on' : ''}"></span>`).join('')}</div>` : ''}` : ''}
         ${resto.length ? `<div class="${grupos.length ? 'pz-resto' : ''}">
-          ${resto.map(p => { const ok = esLista(p.d, p.n); return `<div class="pz ${ok ? 'lista' : ''}"><span class="d">${esc(p.d || 'Pieza')}${ok ? '<span class="pz-lista">✓ LISTA</span>' : ''}</span><span class="n">×${+p.n || 0}</span></div>`; }).join('')}
+          ${resto.map(p => {
+            const cnt = tomarResto(p.d || '', +p.n || 0), ok = cnt >= (+p.n || 0) && cnt > 0;
+            const chip = ok ? '<span class="pz-lista">✓ LISTA</span>' : cnt > 0 ? `<span class="pz-lista parc">✓ ${cnt} de ${+p.n || 0}</span>` : '';
+            return `<div class="pz ${ok ? 'lista' : ''}"><span class="d">${esc(p.d || 'Pieza')}${chip}</span><span class="n">×${+p.n || 0}</span></div>`;
+          }).join('')}
         </div>` : ''}
         <div class="pz-tot"><span>Total de piezas</span><b>${ot.piezas || piezas.reduce((s, p) => s + (+p.n || 0), 0)}</b></div>
         ${ot.material ? `<div class="mat">Material: ${esc(matBonito(ot.material))}</div>` : ''}
