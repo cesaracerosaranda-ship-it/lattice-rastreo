@@ -279,7 +279,8 @@ function pintar(data, deCache) {
   const fechaEtapa = {};
   evs.slice().reverse().forEach(e => { fechaEtapa[e.a] = e.created_at; });
   const notas = Array.isArray(ot.notas) ? ot.notas.slice().reverse() : [];
-  const piezas = Array.isArray(ot.piezas_lista) ? ot.piezas_lista : [];
+  // sin renglones ×0: una partida en cero no es una pieza que esperar
+  const piezas = (Array.isArray(ot.piezas_lista) ? ot.piezas_lista : []).filter(p => p && +p.n > 0);
 
   // el refresco de 60 s re-pinta todo: si el cliente estaba viendo el tercer
   // diseño, se le respeta el lugar — que la página se actualice no significa
@@ -336,7 +337,9 @@ function pintar(data, deCache) {
       // avisa si hay algo nuevo (César: "contador para cuando esté oculta").
       // Un único avance sí se muestra directo — no vale la pena ocultar uno.
       let abierto = (avAbierto === null) ? (notas.length === 1) : avAbierto;
-      if (abierto) { avAbierto = true; if (masNuevo > visto) { try { localStorage.setItem(CLK, String(masNuevo)); } catch (e) {} } }
+      // "visto" solo si la pestaña se está VIENDO: el refresco de 60 s corre
+      // también en background y marcaba leído lo que nadie había leído
+      if (abierto) { avAbierto = true; if (masNuevo > visto && !document.hidden) { try { localStorage.setItem(CLK, String(masNuevo)); } catch (e) {} } }
       // adelanto del ÚLTIMO comentario cuando está cerrada (César 11-ago): en vez
       // de un genérico, se asoma el inicio de lo que el taller dejó; el CSS lo
       // corta con "…" al ancho de la columna (una sola línea).
@@ -380,7 +383,9 @@ function pintar(data, deCache) {
          por su GEOMETRÍA, no por el nombre — dos diseños distintos que se
          llamen igual no se mezclan) y sus medidas van como renglones. Lo que
          no trae dibujo (captura a mano) sigue como renglón clásico. */
-      const dz = (Array.isArray(ot.disenos) ? ot.disenos : []).filter(x => x && x.viz && x.viz.c && x.viz.c.length);
+      // el bb es obligatorio: firma y medidas lo leen sin red — un viz a medias
+      // (snapshot corrupto) no debe tumbar la página pública entera
+      const dz = (Array.isArray(ot.disenos) ? ot.disenos : []).filter(x => x && x.viz && x.viz.c && x.viz.c.length && x.viz.bb && +x.n > 0);
       /* piezas ya cortadas: el taller lo captura en Producción por fila, con
          avance parcial. Formatos en piezas_listas: string 'desc|n' (v43.0 =
          fila completa) u objeto {k:'desc|AxB|n', n:cuántas} (v43.1, la llave
@@ -401,13 +406,17 @@ function pintar(data, deCache) {
         }
         return 0;
       };
+      // desc en llave: MISMO default 'Pieza' que usa Producción al guardarla
+      // (una desc vacía casaba 'Pieza|n' contra '|n' y el ✓ jamás llegaba), y
+      // el separador | dentro de la desc se sanea igual en los dos lados
+      const dK = d => String(d || 'Pieza').replace(/\|/g, '¦');
       const tomarResto = (d, n) => {
         // renglón sin dibujo: llave exacta 'desc|n' o, si el taller la marcó
         // con medida y aquí no la hay, cualquier llave desc|…|n del mismo par
-        const t = tomar([(d || '') + '|' + (+n || 0)], +n || 0);
+        const t = tomar([dK(d) + '|' + (+n || 0)], +n || 0);
         if (t) return t;
         for (const [k, c] of saldo) {
-          if (c > 0 && k.startsWith((d || '') + '|') && k.endsWith('|' + (+n || 0))) {
+          if (c > 0 && k.startsWith(dK(d) + '|') && k.endsWith('|' + (+n || 0))) {
             const q = Math.min(+n || 0, c); saldo.set(k, c - q); return q;
           }
         }
@@ -415,7 +424,7 @@ function pintar(data, deCache) {
       };
       const firma = v => {
         const w = v.bb.x1 - v.bb.x0, h = v.bb.y1 - v.bb.y0;
-        return (h > 0 ? (w / h).toFixed(1) : '?') + '|' + v.c.map(k => `${k.i}${k.z}:${k.p.length}`).join(',');
+        return (h > 0 ? (w / h).toFixed(1) : '?') + '|' + v.c.map(k => `${k.i}${k.z}:${(k.p || []).length}`).join(',');
       };
       const grupos = [];
       dz.forEach(x => {
@@ -427,7 +436,7 @@ function pintar(data, deCache) {
       });
       // cuántas de cada variante están listas — en orden de pintado, para que
       // dos variantes idénticas se repartan el saldo y no se dupliquen los ✓
-      grupos.forEach(g => g.vars.forEach(v => { v.cnt = tomar([`${v.d}|${v.w}×${v.h}|${v.n}`, `${v.d}|${v.n}`], v.n); }));
+      grupos.forEach(g => g.vars.forEach(v => { v.cnt = tomar([`${dK(v.d)}|${v.w}×${v.h}|${v.n}`, `${dK(v.d)}|${v.n}`], v.n); }));
       // lo ya representado por un dibujo no se repite en la lista de abajo
       const resto = piezas.slice();
       grupos.forEach(g => g.vars.forEach(v => {
@@ -530,13 +539,23 @@ async function cargar(primera) {
     return; // en refrescos silenciosos no borramos lo que ya se ve
   }
   hayPintado = true;
+  // pintar PRIMERO y cachear después: si un dato raro rompe el pintado, no
+  // queda "envenenado" en el caché repitiendo el error en cada visita
+  try { pintar(data); } catch (e) {
+    hayPintado = false;
+    if (primera) err('No pudimos mostrar tu pedido', 'Algo en los datos no se pudo dibujar. Contacta a Lattice Works.');
+    return;
+  }
   if (!demo) cacheGuardar(data);
-  pintar(data);
 }
 
 // La última copia buena pinta AL INSTANTE (si existe); lo fresco la reemplaza.
 const previa = demo ? null : cacheLeer();
-if (previa && previa.ot) { hayPintado = true; pintar(previa, true); }
+if (previa && previa.ot) {
+  // una copia que ya no pinta se descarta (no puede matar la página entera)
+  try { pintar(previa, true); hayPintado = true; }
+  catch (e) { try { localStorage.removeItem(CACHE_KEY); } catch (e2) {} }
+}
 cargar(true);
 setInterval(() => cargar(false), 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(false); });
