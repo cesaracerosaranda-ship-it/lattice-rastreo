@@ -135,7 +135,11 @@
   .dzv:last-child { border-bottom: 0; padding-bottom: 0; }
   .dzv b { color: var(--gold); font-weight: 600; }
   .dzvs { margin-top: 7px; border-top: 1px solid var(--line); padding-top: 3px; }
-  .dz-nota { font-size: var(--t-micro); color: var(--txt4); margin-top: 10px; line-height: 1.5; }
+  /* La única excepción al piso de 11px de esta página, a pedido de César
+     (13-ago): es una nota al pie —una aclaración sobre el dibujo, no el
+     contenido del pedido— y en cursiva y más chica se lee como lo que es,
+     sin competir con las medidas de arriba. Todo lo demás mantiene el piso. */
+  .dz-nota { font-size: 10px; font-style: italic; color: var(--txt4); margin-top: 10px; line-height: 1.5; }
   /* carrusel (pedido de César 8-ago): un diseño a la vez con ASOMO del
      siguiente — el asomo ES el aviso de que hay más, igual que el tablero
      móvil de Producción. Scroll nativo con anclaje; sin autoplay: el cliente
@@ -188,11 +192,18 @@
    get_rastreo_ot (SECURITY DEFINER validado por token); se refresca solo
    cada 60 s y al volver a la pestaña. */
 const PASOS = [
+  /* ORDEN Y ANTICIPO van PRIMERO (13-ago, César): es lo que de verdad pasó
+     antes que nada. No es un estado del taller sino un hecho ya ocurrido —
+     si la orden existe, esto ya sucedió— así que se pinta siempre cumplido.
+     Ojo con la tentación de subir 'pendiente' en su lugar: ese estado es
+     MATERIAL EN COLA, que ocurre DESPUÉS del diseño, y el viaje retrocedería
+     al pasar de una etapa a la otra. */
+  { key: '__recibida', label: 'Orden y anticipo recibidos', hecho: true },
   /* DISEÑO (13-ago-2026): toda orden nace aquí. Para el cliente es la etapa
      donde su dibujo se ajusta y se aprueba — el sello de esa aprobación es lo
      que el taller necesita poder probar después. */
-  { key: 'diseno', label: 'Revisión de diseño' },
-  { key: 'pendiente', label: 'Orden recibida' },
+  { key: 'diseno', label: 'Diseño y medidas finales' },
+  { key: 'pendiente', label: 'Preparando el material' },
   { key: 'en_proceso', label: 'En proceso de corte' },
   { key: 'pausada', label: 'En pausa' },
   { key: 'acabado', label: 'Doblez y pintura' },
@@ -282,6 +293,9 @@ function pintar(data, deCache) {
   // fecha en que se llegó a cada etapa (último evento que ENTRÓ a ella)
   const fechaEtapa = {};
   evs.slice().reverse().forEach(e => { fechaEtapa[e.a] = e.created_at; });
+  // el paso de 'orden recibida' no tiene evento propio: su fecha es la del
+  // nacimiento de la orden, que es el evento más viejo (evs viene DESC)
+  if (evs.length) fechaEtapa.__recibida = evs[evs.length - 1].created_at;
   const notas = Array.isArray(ot.notas) ? ot.notas.slice().reverse() : [];
   // sin renglones ×0: una partida en cero no es una pieza que esperar
   const piezas = (Array.isArray(ot.piezas_lista) ? ot.piezas_lista : []).filter(p => p && +p.n > 0);
@@ -495,10 +509,15 @@ function pintar(data, deCache) {
     <div class="card">
       <div class="sec">EL VIAJE DE TU PEDIDO</div>
       <div class="pasos">
-        ${VIS.map((p, i) => `<div class="paso ${i < idxViaje ? 'on' : ''} ${i === idxViaje ? 'on now' : ''}">
-          <span class="pin">${i < idxViaje ? '✓' : ''}</span><span class="pl">${p.label}</span>
-          ${i <= idxViaje && fechaEtapa[p.key] ? `<span class="pf">${fmtDH(fechaEtapa[p.key])}</span>` : ''}
-        </div>`).join('')}
+        ${VIS.map((p, i) => {
+          // `hecho` = hito ya ocurrido por definición (la orden existe), no un
+          // estado del taller: se pinta cumplido pase lo que pase
+          const cumplido = p.hecho || i < idxViaje, ahora = i === idxViaje;
+          return `<div class="paso ${cumplido ? 'on' : ''} ${ahora ? 'on now' : ''}">
+          <span class="pin">${cumplido ? '✓' : ''}</span><span class="pl">${p.label}</span>
+          ${(cumplido || ahora) && fechaEtapa[p.key] ? `<span class="pf">${fmtDH(fechaEtapa[p.key])}</span>` : ''}
+        </div>`;
+        }).join('')}
       </div>
     </div>
   `;
