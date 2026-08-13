@@ -188,6 +188,10 @@
    get_rastreo_ot (SECURITY DEFINER validado por token); se refresca solo
    cada 60 s y al volver a la pestaña. */
 const PASOS = [
+  /* DISEÑO (13-ago-2026): toda orden nace aquí. Para el cliente es la etapa
+     donde su dibujo se ajusta y se aprueba — el sello de esa aprobación es lo
+     que el taller necesita poder probar después. */
+  { key: 'diseno', label: 'Revisión de diseño' },
   { key: 'pendiente', label: 'Orden recibida' },
   { key: 'en_proceso', label: 'En proceso de corte' },
   { key: 'pausada', label: 'En pausa' },
@@ -299,6 +303,7 @@ function pintar(data, deCache) {
         // tenga una noción del porcentaje cortado y lo que falta".)
         (ot.estado === 'en_proceso' && ot.piezas > 0 && ot.piezas_cortadas > 0)
           ? `CORTANDO · ${ot.piezas_cortadas} DE ${ot.piezas} PIEZAS`
+          : ot.estado === 'diseno' ? 'REVISANDO TU DISEÑO'
           : (ot.estado === 'pendiente' && !ot.material_ok)
             ? (ot.material_pedido ? 'PREPARANDO EL MATERIAL' : 'EN COLA DE PRODUCCIÓN')
             : (VIS[idxViaje] ? VIS[idxViaje].label.toUpperCase() : esc(ot.estado).toUpperCase()))}</div>
@@ -307,6 +312,8 @@ function pintar(data, deCache) {
         <div class="ca-bar"><div style="width:${Math.min(100, Math.round(ot.piezas_cortadas / ot.piezas * 100))}%"></div></div>
         <div class="ca-txt"><b>${ot.piezas_cortadas}</b> de ${ot.piezas} piezas cortadas · faltan ${Math.max(0, ot.piezas - ot.piezas_cortadas)}</div>
       </div>` : ''}
+      ${ot.estado === 'diseno' ? `
+      <div class="mat-nota">✎ Estamos afinando el diseño de tu pieza. En cuanto lo apruebes, pasa a corte.</div>` : ''}
       ${ot.estado === 'pendiente' && !ot.material_ok && ot.material_pedido ? `
       <div class="mat-nota">📦 Estamos esperando que llegue el material de tu pedido. En cuanto esté en piso arranca el corte.</div>` : ''}
       ${/* Dos barras apiladas confunden: la de piezas y la del viaje miden cosas
@@ -444,7 +451,10 @@ function pintar(data, deCache) {
         if (i >= 0) resto.splice(i, 1);
       }));
       if (!grupos.length && !resto.length) return '';
-      const algunaRecortada = dz.some(x => x.viz.dib && x.viz.n && x.viz.dib < x.viz.n);
+      // `s` = el servidor lo adelgazó para que viajara por datos móviles
+      // (v45); `dib < n` = se dibujan menos contornos de los que tiene. Las dos
+      // cosas se le dicen igual al cliente: lo que ve es una vista, no el corte.
+      const algunaRecortada = dz.some(x => x.viz.s || (x.viz.dib && x.viz.n && x.viz.dib < x.viz.n));
       return `<div class="card">
         <div class="sec">TU PEDIDO${grupos.length ? ' · LO QUE ESTAMOS CORTANDO' : ''}</div>
         ${grupos.length ? `<div class="${grupos.length === 1 ? 'dz-grid uno' : 'dz-carrusel'}" ${grupos.length > 1 ? 'id="dzc" role="region" aria-label="Tus diseños"' : ''}>
