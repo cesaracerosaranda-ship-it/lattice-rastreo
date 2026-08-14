@@ -69,6 +69,10 @@
   .av-chev { color: var(--gold); font-size: 12px; width: 14px; text-align: center; }
   .av-lista { margin-top: 14px; }
   .av-cerrado { margin-top: 12px; }
+  /* el porqué del fallo, discreto: al cliente no le estorba y a nosotros
+     nos convierte su captura de pantalla en un diagnóstico */
+  .err-tec { display: inline-block; margin-top: 8px; font-family: 'JetBrains Mono', monospace;
+    font-size: var(--t-micro); color: var(--txt4); }
   /* adelanto del último comentario en UNA línea: palomita + texto con "…" +
      cámara si trae foto; el llamado se alinea con el texto, no con la palomita */
   .av-prev { display: flex; align-items: center; gap: 10px; }
@@ -186,6 +190,22 @@
      verbatim. (Verificado contra produccion el 31-jul.) -->
 <script src="./rastreo-config.js"></script>
 <script>
+/* Abrir la conexión al servidor de datos DESDE YA (13-ago). El fetch real
+   ocurre unas líneas más abajo, pero antes hay que resolver el DNS, abrir el
+   socket y negociar el TLS: en wifi son milisegundos, en datos móviles —con la
+   radio despertando y 300-800 ms de ida y vuelta— eso solo puede costar
+   segundos. Pidiéndolo aquí, el teléfono lo va haciendo mientras termina de
+   leer la página, y cuando toca pedir los datos el camino ya está abierto.
+   Sale del CONFIG, no clavado: si algún día cambia el proyecto, se mueve solo. */
+try {
+  if (typeof RASTREO_CFG !== 'undefined' && RASTREO_CFG.url) {
+    var lk = document.createElement('link');
+    lk.rel = 'preconnect'; lk.href = RASTREO_CFG.url; lk.crossOrigin = 'anonymous';
+    document.head.appendChild(lk);
+  }
+} catch (e) { /* si no se puede, la página funciona igual — solo tarda un pelo más */ }
+</script>
+<script>
 /* Página PÚBLICA (Rastreo 2.0): el cliente ve su pedido EN VIVO — estado,
    desglose de piezas y los avances que el taller publica desde Producción.
    Cero precios ni datos internos (regla de vista cliente). Datos vía RPC
@@ -238,19 +258,56 @@ async function traer() {
       piezas_listas: [ { k: 'Tapa perforada decorativa|6', n: 6 }, { k: 'Soporte en L cal. 16|10', n: 4 } ] },
       eventos: [ { de: 'pendiente', a: 'en_proceso', created_at: new Date(Date.now() - 36e5 * 5).toISOString() }, { de: null, a: 'pendiente', created_at: new Date(Date.now() - 864e5).toISOString() } ] };
   }
-  // Timeout propio: en el navegador embebido de WhatsApp un fetch puede
-  // quedarse colgado sin resolver jamás — y eso era pantalla negra eterna.
+  return traerConPaciencia();
+}
+
+/* POR QUÉ HAY REINTENTOS (13-ago, César: "no carga cuando no estoy en wifi").
+   Antes era UN intento de 12 s: si fallaba, el cliente veía el error y ya. En
+   wifi casi nunca falla; en datos móviles sí — la radio tarda en despertar, la
+   latencia sube, se pierden paquetes, y el primer apretón de manos con el
+   servidor puede pasarse de 12 s sin que la red esté realmente caída.
+   Ahora insiste tres veces con más paciencia cada vez y le dice al cliente que
+   sigue intentando, en vez de rendirse a la primera. */
+let ultimoFallo = '';   // qué pasó en el último intento — lo usa el mensaje
+
+async function traerUnaVez(msEspera) {
   const corte = new AbortController();
-  const t = setTimeout(() => corte.abort(), 12000);
+  const t = setTimeout(() => corte.abort(), msEspera);
   try {
     const r = await fetch(RASTREO_CFG.url.replace(/\/+$/, '') + '/rest/v1/rpc/get_rastreo_ot', {
       method: 'POST',
       headers: { apikey: RASTREO_CFG.anonKey, Authorization: 'Bearer ' + RASTREO_CFG.anonKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_token: token }),
       signal: corte.signal,
+      cache: 'no-store',
     });
-    return r.ok ? await r.json() : null;
+    if (!r.ok) { ultimoFallo = 'el servidor respondió ' + r.status; return null; }
+    ultimoFallo = '';
+    return await r.json();
+  } catch (e) {
+    // AbortError = se acabó la paciencia; lo demás = la red ni contestó
+    ultimoFallo = (e && e.name === 'AbortError') ? 'se agotó el tiempo de espera'
+      : (navigator.onLine === false ? 'el teléfono está sin conexión' : 'no hubo respuesta de la red');
+    return null;
   } finally { clearTimeout(t); }
+}
+
+async function traerConPaciencia(soloUno) {
+  // El refresco de fondo (cada 60 s) NO insiste: ya hay algo pintado en
+  // pantalla y encadenar esperas largas solo calienta la batería.
+  const ESPERAS = soloUno ? [12000] : [12000, 18000, 24000];
+  for (let i = 0; i < ESPERAS.length; i++) {
+    const d = await traerUnaVez(ESPERAS[i]);
+    if (d) return d;
+    if (i < ESPERAS.length - 1) {
+      // si YA hay una copia en pantalla, ese aviso no se pisa: el cliente
+      // tiene que seguir sabiendo que lo que ve es la última copia buena
+      if ($live) $live.innerHTML = (hayPintado ? 'mostrando la última copia · ' : '')
+        + `<span class="dot" style="color:var(--gold)">●</span> la red va lenta · reintentando (${i + 2} de ${ESPERAS.length})…`;
+      await new Promise(r => setTimeout(r, 800 * (i + 1)));
+    }
+  }
+  return null;
 }
 
 /* Última copia buena POR TOKEN: si el enlace ya abrió una vez en este
@@ -553,17 +610,30 @@ async function cargar(primera) {
     return err('Esta orden no está disponible', 'El enlace no es válido o el seguimiento no está configurado. Contacta a Lattice Works.');
   }
   let data = null;
-  try { data = await traer(); } catch (e) { data = null; }
+  // en la PRIMERA carga se insiste (datos móviles); en los refrescos de fondo
+  // basta un intento: ya hay algo en pantalla
+  try { data = demo ? await traer() : await traerConPaciencia(!primera); } catch (e) { data = null; }
   if (!data || !data.ot) {
     // Sin respuesta ≠ enlace muerto: puede ser la señal. Si hay copia local ya
     // pintada se queda; si no, se dice claro y se ofrece REINTENTAR — nunca
     // más una pantalla muda.
     if (primera && !hayPintado) {
-      err('No pudimos cargar tu pedido', 'Puede ser la señal de tu teléfono o un enlace desactivado. Revisa tu conexión e inténtalo de nuevo.');
+      /* El motivo VA EN EL MENSAJE (13-ago): "no cargó" no dice nada ni al
+         cliente ni a nosotros. Distinguir "sin conexión" de "se agotó el
+         tiempo" o "el servidor respondió 500" es lo que convierte la captura
+         de pantalla de un cliente en un diagnóstico. */
+      const sinRed = navigator.onLine === false;
+      err(sinRed ? 'Parece que no hay conexión' : 'No pudimos cargar tu pedido',
+        (sinRed
+          ? 'Tu teléfono no tiene internet en este momento. Conéctate y vuelve a intentar.'
+          : 'Lo intentamos varias veces y la red no respondió. Si estás con datos móviles, prueba moverte a donde haya mejor señal.')
+        + (ultimoFallo ? `<br><span class="err-tec">detalle: ${esc(ultimoFallo)}</span>` : ''));
       const b = document.createElement('button');
       b.className = 'retry'; b.textContent = 'Reintentar';
       b.addEventListener('click', () => { $app.innerHTML = '<div class="skel">Cargando tu pedido…</div>'; cargar(true); });
       $app.querySelector('.err').appendChild(b);
+      // y si la conexión vuelve sola, se recarga sin que el cliente haga nada
+      window.addEventListener('online', () => cargar(true), { once: true });
     }
     return; // en refrescos silenciosos no borramos lo que ya se ve
   }
