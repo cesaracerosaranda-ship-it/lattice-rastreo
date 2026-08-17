@@ -11,6 +11,8 @@
      ENCUESTA DE EVALUACIÓN · 2-ago-2026
      Documento de Gerardo: 5 preguntas, 2-3 min. El contenido de cada pregunta
      se respeta TAL CUAL — el documento pedía conservar exactamente su enfoque.
+     16-ago-2026: se le sumó al FINAL la 06-07 sobre el link de rastreo (tarea
+     #11), que no es de Gerardo y por eso no se mete entre las suyas.
      Diseñada para el celular primero: ahí es donde el cliente la va a abrir,
      y una encuesta incómoda en el teléfono simplemente no se contesta.
      ══════════════════════════════════════════════════════════════════════ */
@@ -245,9 +247,51 @@
         ['mantener', 'Nada: mantener el servicio actual'],
       ],
       txt: '¿Algo más que quieras decirnos? (opcional)', txtK: 'recompra_comentario' },
+
+    /* ── 06 y 07 · EL LINK DE RASTREO (César, 16-ago-2026 · tarea #11) ──────
+       Va como pregunta PROPIA y AL FINAL, no como una opción más dentro de
+       "comunicación": esa métrica ya tiene historial y meterle una opción
+       nueva la contaminaría. Así las 5 de Gerardo conservan orden y claves,
+       y lo medido hasta hoy sigue siendo comparable.
+
+       La 06 parte el NO en tres, porque las tres se arreglan distinto:
+       "no lo abrí" = el link llegó pero no convenció; "no supe que existía" =
+       falla NUESTRA al entregarlo; "no me hizo falta" = señal de producto.
+       Un no pelón no distingue entre esas tres y nos dejaría adivinando.
+
+       La 07 sale SOLO a quien lo abrió: preguntarle a quien nunca lo vio si
+       nos distingue como proveedor es pedirle opinión de lo que no conoce. */
+    { k: 'rastreo', n: '06',
+      q: '¿Usaste el enlace para seguir tu pedido en línea?',
+      ops: [
+        ['varias', 'Sí, lo revisé varias veces'],
+        ['una', 'Sí, lo abrí una vez'],
+        ['no_abri', 'Me llegó, pero no lo abrí'],
+        ['no_supe', 'No supe que existía'],
+        ['no_falta', 'No me hizo falta: prefiero preguntar directo'],
+      ] },
+
+    { k: 'rastreo_valor', n: '07', dep: 'rastreo',
+      soloSi: R => R.rastreo === 'varias' || R.rastreo === 'una',
+      q: 'Poder seguir tu pedido en línea, ¿te distingue a un proveedor de otro?',
+      ops: [
+        ['mucho', 'Sí, es de lo que más me gustó del servicio'],
+        ['suma', 'Suma, aunque no es lo que decide la compra'],
+        ['igual', 'Me da igual: lo que importa es la pieza'],
+        ['falta', 'Buena idea, pero le falta información'],
+      ],
+      txt: '¿Qué le agregarías o mejorarías? (opcional)', txtK: 'rastreo_mejora' },
   ];
 
   const R = {};   // respuestas
+
+  /* Una pregunta APLICA si no es condicional, o si su condición se cumple, o
+     si TODAVÍA no se contesta la que la condiciona: prometer el camino largo
+     mientras no se sabe es honesto, adivinar la respuesta del cliente antes de
+     que la dé no lo es. Mismo criterio que encuesta-perdida.html, donde el
+     contador dice "02 DE 04" hasta que la respuesta lo colapsa a 03. */
+  const aplicaP = x => !x.soloSi || !R[x.dep] || x.soloSi(R);
+
   let paso = 0;   // pregunta visible
   let datosOT = null;
   let dirAnim = 'in';   // hacia dónde entra la carta: avanzar baja, regresar sube
@@ -272,7 +316,12 @@
   }
 
   function pintarPaso() {
-    const d = datosOT, p = P[paso], ultimo = paso === P.length - 1;
+    const d = datosOT, p = P[paso];
+    /* ÚLTIMO = ya no queda ninguna aplicable adelante. Ojo: NO sirve
+       `paso === P.length - 1` como antes, porque la condicional es justo la
+       última — quien conteste "no lo abrí" en la 06 termina ahí sin ser el
+       último índice, y el botón tiene que decirle "Enviar mis respuestas". */
+    const ultimo = !P.slice(paso + 1).some(aplicaP);
     /* El saludo es para la PERSONA con la que se trató, no para la razón
        social: "¿Cómo nos fue, Carlos?" — no "¿Cómo nos fue, Paran?" (César
        lo vio en la primera prueba). Sin nombre capturado, sin nombre: un
@@ -281,7 +330,10 @@
     // El saludo usa a quien de verdad está contestando, si se identificó
     const saludo = (quien || contacto || '').trim().split(' ')[0];
     const elegido = p.multi ? (R.recompra_todas || []).length > 0 : !!R[p.k];
-    const pct = Math.round(((paso) / P.length) * 100);
+    // El contador cuenta el camino de ESTA persona, no el catálogo completo
+    const aplican = P.filter(aplicaP);
+    const iAct = Math.max(1, aplican.findIndex(x => x.k === p.k) + 1);
+    const pct = Math.round(((iAct - 1) / aplican.length) * 100);
     const intro = paso === 0 ? `
       <div class="intro">
         <span class="min">⏱ Te toma 2 o 3 minutos</span>
@@ -302,7 +354,7 @@
     cont.innerHTML = `${intro}
       <div class="prog">
         <div class="prog-bar"><div style="width:${pct}%"></div></div>
-        <span class="prog-t">PREGUNTA ${p.n} DE 05</span>
+        <span class="prog-t">PREGUNTA ${String(iAct).padStart(2, '0')} DE ${String(aplican.length).padStart(2, '0')}</span>
       </div>
       <div class="p anim-${dirAnim}" data-p="${p.k}">
         <div class="p-q">${p.q}</div>
@@ -340,9 +392,16 @@
        de tiempo — lo cachó la suite. De pilón protege el doble-tap del celular. */
     let avanzo = false;
     const avanzar = () => {
-      if (paso < P.length - 1) {
+      /* Se brincan las condicionales que no aplican. Aquí la navegación es
+         ESTRICTA aunque el contador sea generoso: si no contestó la 06, la 07
+         no sale. El contador promete el camino largo, la navegación cumple el
+         real — y quien saltó la 06 no merece que le preguntemos qué mejoraría
+         de algo que no dijo haber usado. */
+      let sig = paso + 1;
+      while (sig < P.length && P[sig].soloSi && !P[sig].soloSi(R)) sig++;
+      if (sig < P.length) {
         if (avanzo) return; avanzo = true;
-        dirAnim = 'in'; paso++; pintarPaso(); window.scrollTo({ top: 0 });
+        dirAnim = 'in'; paso = sig; pintarPaso(); window.scrollTo({ top: 0 });
       } else enviar();   // enviar trae su propia bandera de vuelo (reintentable si falla)
     };
 
@@ -406,7 +465,12 @@
     const est = document.getElementById('est'), btn = document.getElementById('sig');
     /* Nada es obligatorio salvo dar UNA señal: obligar campos en una encuesta
        voluntaria es la forma más rápida de que la abandonen a media página. */
-    const dio = ['motivo', 'entrega', 'friccion', 'valor', 'recompra'].some(k => R[k]);
+    /* LA TRAMPA de este archivo (documentada en CLAUDE.md): esta lista va
+       atada a las claves, y si se agrega una pregunta y no se agrega aquí,
+       quien SOLO conteste la nueva ve el botón mudo — sin error en consola.
+       Por eso 'rastreo' y 'rastreo_valor' entran junto con la pregunta. */
+    const dio = ['motivo', 'entrega', 'friccion', 'valor', 'recompra',
+                 'rastreo', 'rastreo_valor'].some(k => R[k]);
     if (!dio) {
       est.className = 'estado mal';
       est.textContent = 'Contesta al menos una pregunta y con eso nos ayudas — puedes regresar con ‹ Anterior.';
