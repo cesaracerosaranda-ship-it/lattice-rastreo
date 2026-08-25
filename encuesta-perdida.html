@@ -102,6 +102,10 @@
   .prog-bar div { height: 100%; background: var(--oro); border-radius: 4px; transition: width .3s ease; }
   .prog-t { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--oro-hondo);
     letter-spacing: .1em; white-space: nowrap; }
+  .factor-anida { margin: 4px 0 0 12px; padding-left: 16px; border-left: 2px solid #E6E1D3; }
+  .factor-anida .p-q { font-size: 15px; }
+  .preg2 { margin-top: 26px; }
+  #txt-wrap { margin-top: 10px; }
   .wiz-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
   .wiz-nav a { font-size: 12.5px; color: var(--suave); text-decoration: none; padding: 6px 2px; }
   .wiz-nav a:active { color: var(--oro-hondo); }
@@ -110,6 +114,10 @@
     font-size: 12.5px; color: var(--suave); line-height: 1.6; }
   .soy a { color: var(--oro-hondo); }
   .soy #soy-caja { display: flex; gap: 8px; margin-top: 9px; }
+  /* el id le gana en especificidad a .oculto: sin esta regla, la caja del
+     nombre salía SIEMPRE abierta (bug heredado del asistente — nadie lo cazó
+     porque la suite vieja no lo probaba) */
+  .soy #soy-caja.oculto { display: none; }
   .soy input { flex: 1; min-width: 0; border: 1.5px solid var(--borde); border-radius: 9px;
     padding: 10px 11px; font-family: inherit; font-size: 14px; background: #fff; color: var(--tinta); }
   .soy input:focus { outline: none; border-color: var(--oro); }
@@ -178,98 +186,75 @@
     body: JSON.stringify(body),
   });
 
-  /* ── Cuatro preguntas. El tono lo decidió César: cerrar el ciclo con clase,
-        sin reclamo. A un lead que dejó de contestar, "¿por qué no nos elegiste?"
-        se lee como reproche; esto se lee como profesionalismo. ─────────────── */
-  const P = [
-    { k: 'desenlace', n: '01',
-      q: '¿Qué pasó al final con el proyecto?',
-      ops: [
-        ['otro_proveedor', 'Lo hizo otro proveedor'],
-        ['pospuesto', 'Se pospuso o se canceló'],
-        ['evaluando', 'Sigue en evaluación'],
-        ['no_procedio', 'Al final no lo necesitábamos'],
-      ] },
-
-    { k: 'factor', n: '02', dep: 'desenlace', soloSi: r => r.desenlace === 'otro_proveedor',
-      q: '¿Qué pesó más en esa decisión?',
-      ops: [
-        ['precio', 'El precio'],
-        ['tiempo', 'El tiempo de entrega'],
-        ['confianza', 'La confianza o la experiencia previa con ellos'],
-        ['alcance', 'Hacían cosas que nosotros no'],
-        ['seguimiento', 'El seguimiento que les dimos'],
-        ['otro', 'Otra cosa'],
-      ] },
-
-    { k: 'cercania', n: '03',
-      q: '¿Qué tan cerca estuvimos?',
-      ops: [
-        ['cerca', 'Nos faltó poco'],
-        ['parejo', 'Estuvo parejo'],
-        ['lejos', 'No estuvimos cerca'],
-      ] },
-
-    /* La que convierte esto en pipeline y no solo en aprendizaje: un cliente
-       perdido que contesta "sí" es un lead vivo. */
-    { k: 'volveria', n: '04',
-      q: '¿Nos considerarías para un próximo proyecto?',
-      ops: [
-        ['si', 'Sí, con gusto'],
-        ['tal_vez', 'Tal vez, según el proyecto'],
-        ['no', 'No'],
-      ],
-      txt: '¿Algo que debamos hacer distinto la próxima vez? (opcional)', txtK: 'comentario' },
-  ];
+  /* ── DOS preguntas en UNA tarjeta (César, 25-ago). Tercera iteración del
+     mismo aprendizaje: el asistente de 4 pasos con barra ERA corto, pero
+     PARECÍA trámite — y nadie lo contestaba. Ahora todo cabe en una vista:
+     qué pasó (con el "¿qué pesó?" desplegándose SOLO si se fue con otro) y
+     si nos volvería a considerar. `cercania` salió de la UI — era métrica de
+     vanidad nuestra, no información del cliente; su columna queda para leer
+     el historial. El tono no cambió: cerrar el ciclo con clase, sin reclamo. */
+  const P1 = { k: 'desenlace',
+    q: '¿Qué pasó al final con el proyecto?',
+    ops: [
+      ['otro_proveedor', 'Lo hizo otro proveedor'],
+      ['pospuesto', 'Se pospuso o se canceló'],
+      ['evaluando', 'Sigue en evaluación'],
+      ['no_procedio', 'Al final no lo necesitábamos'],
+    ] };
+  /* La intriga real de César: "¿por qué ya no somos opción?" — solo aplica
+     si de verdad eligieron a otro, y se pregunta ahí mismo, sin cambiar de
+     pantalla. */
+  const PF = { k: 'factor',
+    q: 'Y en esa decisión, ¿qué pesó más?',
+    ops: [
+      ['precio', 'El precio'],
+      ['tiempo', 'El tiempo de entrega'],
+      ['confianza', 'La confianza o la experiencia previa con ellos'],
+      ['alcance', 'Hacían cosas que nosotros no'],
+      ['seguimiento', 'El seguimiento que les dimos'],
+      ['otro', 'Otra cosa'],
+    ] };
+  /* La que convierte esto en pipeline y no solo en aprendizaje: un cliente
+     perdido que contesta "sí" es un lead vivo. */
+  const P2 = { k: 'volveria',
+    q: '¿Nos considerarías para un próximo proyecto?',
+    ops: [
+      ['si', 'Sí, con gusto'],
+      ['tal_vez', 'Tal vez, según el proyecto'],
+      ['no', 'No'],
+    ],
+    txt: '¿Algo que debamos hacer distinto? (opcional)', txtK: 'comentario' };
 
   const R = {};   // respuestas
-  let paso = 0;   // pregunta visible
   let datosOT = null;
-  let dirAnim = 'in';   // hacia dónde entra la carta: avanzar baja, regresar sube
   /* Quién contesta. Vacío = el contacto principal. Con el CC del correo, un
      solo enlace lo abren varios (gerencia, compras, dirección), así que el
      token ya no basta para saber quién es: hay que preguntarlo. Pero sin
      cobrarle fricción al caso común — el contacto principal no teclea nada. */
   let quien = '';
 
-  /* ── ASISTENTE PASO A PASO (César 2-ago) ──────────────────────────────
-     Antes las 5 preguntas salían todas juntas: "si de primera impresión ven
-     que es una encuesta larga puede que no la contesten". Ahora se ve UNA
-     pregunta y una barra de avance — se lee corto porque ES corto, de una en
-     una. Reglas de avance:
-     · pregunta de pura selección → avanza sola al elegir (nada más que hacer)
-     · pregunta con comentario opcional → botón Continuar, para que quien
-       quiera escribir pueda — y quien no, siga con un clic
-     · siempre se puede regresar (‹ Anterior) o saltar: obligar es la forma
-       más rápida de que la abandonen, media respuesta vale más que ninguna */
-  function pintarFormulario(d) {
-    datosOT = d; paso = 0; pintarPaso();
+  function radios(pdef, extraCls) {
+    return `<div class="p anim-in ${extraCls || ''}" data-p="${pdef.k}">
+      <div class="p-q">${pdef.q}</div>
+      <div class="ops">${pdef.ops.map(([v, txt]) => `
+        <label class="op ${R[pdef.k] === v ? 'on' : ''}" data-g="${pdef.k}" data-v="${esc(v)}">
+          <input type="radio" name="${pdef.k}" value="${esc(v)}"><span class="mk"></span><span>${esc(txt)}</span>
+        </label>`).join('')}</div>
+    </div>`;
   }
 
-  function pintarPaso() {
-    const d = datosOT, p = P[paso], ultimo = paso === P.length - 1;
-    /* El saludo es para la PERSONA con la que se trató, no para la razón
-       social: "¿Cómo nos fue, Carlos?" — no "¿Cómo nos fue, Paran?" (César
-       lo vio en la primera prueba). Sin nombre capturado, sin nombre: un
-       saludo genérico bien puesto vale más que uno personalizado mal. */
+  function pintarFormulario(d) {
+    datosOT = d;
     const contacto = (d.cliente || '').trim().split(' ')[0];
-    // El saludo usa a quien de verdad está contestando, si se identificó
     const saludo = (quien || contacto || '').trim().split(' ')[0];
-    const elegido = p.multi ? (R.recompra_todas || []).length > 0 : !!R[p.k];
-    /* Las preguntas que de verdad le van a salir a ESTA persona: si dijo que
-       el proyecto se canceló, la 02 no aplica y el contador no debe prometerla.
-       Decir "01 de 04" y enseñar tres es una mentira chica que se nota.
-       Pero mientras NO haya contestado la pregunta de la que depende, sí cuenta:
-       arrancar en "01 de 03" sería adivinar su respuesta antes de que la dé. */
-    const aplican = P.filter(x => !x.soloSi || !R[x.dep] || x.soloSi(R));
-    const iAct = Math.max(1, aplican.findIndex(x => x.k === p.k) + 1);
-    const pct = Math.round(((iAct - 1) / aplican.length) * 100);
-    const intro = paso === 0 ? `
+    /* El saludo es para la PERSONA con la que se trató, no para la razón
+       social — y sin nombre capturado no se inventa uno. */
+    cont.innerHTML = `
       <div class="intro">
-        <span class="min">⏱ Dos minutos, cuatro preguntas</span>
+        <span class="min">⏱ Medio minuto, dos preguntas</span>
         <h1>Antes de cerrar este proyecto${saludo ? `, ${esc(saludo)}` : ''}</h1>
         <p class="franco">Entendemos que la cotización <b>${esc(d.folio)}</b> tomó otro camino, y está bien.
-           Antes de cerrarla de nuestro lado nos ayudaría saber qué pasó — son cuatro preguntas y no
+           Antes de cerrarla de nuestro lado nos ayudaría saber qué pasó — son dos preguntas y no
            hay respuesta incómoda. Lo que nos digas se usa para mejorar, no para insistir.</p>
         <div class="soy">${quien
           ? `Contestas como <b>${esc(quien)}</b>. <a href="#" id="soy-otro">cambiar</a>`
@@ -279,102 +264,43 @@
             <button type="button" class="btn-soy" id="soy-ok">Listo</button>
           </div>
         </div>
-      </div>` : '';
-
-    cont.innerHTML = `${intro}
-      <div class="prog">
-        <div class="prog-bar"><div style="width:${pct}%"></div></div>
-        <span class="prog-t">PREGUNTA ${String(iAct).padStart(2, '0')} DE ${String(aplican.length).padStart(2, '0')}</span>
       </div>
-      <div class="p anim-${dirAnim}" data-p="${p.k}">
-        <div class="p-q">${p.q}</div>
-        ${p.multiNota ? `<div class="multi-nota">${esc(p.multiNota)}</div>` : ''}
-        <div class="ops">${p.ops.map(([v, t]) => {
-          const marcada = p.multi ? (R.recompra_todas || []).includes(v) : R[p.k] === v;
-          const orden = p.multi ? (R.recompra_todas || []).indexOf(v) : -1;
-          return `
-          <label class="op ${marcada ? 'on' : ''} ${p.multi ? 'multi' : ''}" data-v="${esc(v)}">
-            <input type="${p.multi ? 'checkbox' : 'radio'}" name="${p.k}" value="${esc(v)}"><span class="mk">${orden === 0 ? '<i>1ª</i>' : ''}</span><span>${esc(t)}</span>
-          </label>`;
-        }).join('')}</div>
-        ${p.cal ? `<div id="cal-wrap" class="${elegido ? '' : 'oculto'}">
-          <div class="sub-q">${p.cal}</div>
-          <div class="cal" data-cal="motivo_cumplio">
-            ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" class="${String(R.motivo_cumplio) === String(n) ? 'on' : ''}">${n}</button>`).join('')}
-          </div>
-          <div class="cal-lb"><span>No cumplieron</span><span>Cumplieron de sobra</span></div>
-        </div>` : ''}
-        ${p.txt ? `<div id="txt-wrap" class="${elegido ? '' : 'oculto'}">
-          <label class="op-lb">${esc(p.txt)}</label>
-          <textarea data-txt="${p.txtK}" maxlength="1200" rows="3">${esc(R[p.txtK] || '')}</textarea>
-        </div>` : ''}
-        ${(p.txt || ultimo) ? `<button class="enviar" id="sig" ${elegido || ultimo ? '' : 'disabled'}>${ultimo ? 'Enviar mis respuestas' : 'Continuar →'}</button>` : ''}
-        <div class="wiz-nav">
-          ${paso ? '<a href="#" id="atras">‹ Anterior</a>' : '<span></span>'}
-          <a href="#" id="saltar">${ultimo ? 'Enviar sin esta respuesta ›' : 'Saltar esta pregunta ›'}</a>
-        </div>
-        <div class="estado" id="est"></div>
-      </div>`;
+      ${radios(P1)}
+      <div id="factor-wrap" class="factor-anida ${R.desenlace === 'otro_proveedor' ? '' : 'oculto'}">${radios(PF)}</div>
+      ${radios(P2, 'preg2')}
+      <div id="txt-wrap">
+        <label class="op-lb">${esc(P2.txt)}</label>
+        <textarea data-txt="${P2.txtK}" maxlength="1200" rows="3">${esc(R[P2.txtK] || '')}</textarea>
+      </div>
+      <button class="enviar" id="sig" ${['desenlace', 'factor', 'volveria'].some(k => R[k]) ? '' : 'disabled'}>Enviar mis respuestas</button>
+      <div class="estado" id="est"></div>`;
 
-    /* `avanzo` es el candado: cada pantalla puede avanzar UNA vez. Sin él, el
-       clic en un <label> dispara dos eventos (el real y el sintético del radio
-       que trae adentro) y el auto-avance brincaba una pregunta y enviaba antes
-       de tiempo — lo cachó la suite. De pilón protege el doble-tap del celular. */
-    let avanzo = false;
-    const avanzar = () => {
-      /* Preguntas condicionales: la 02 (¿qué pesó?) solo tiene sentido si el
-         proyecto se fue con otro proveedor. Preguntarle "¿qué pesó en la
-         decisión?" a quien canceló es no haber leído su respuesta anterior —
-         y en una encuesta de dos minutos eso se nota. */
-      let sig = paso + 1;
-      while (sig < P.length && P[sig].soloSi && !P[sig].soloSi(R)) sig++;
-      if (sig < P.length) {
-        /* El candado protege el AVANCE, no el envío: enviar() trae su propia
-           bandera de vuelo. Ponerlo arriba de todo dejaba el botón "Enviar mis
-           respuestas" muerto cuando la pantalla ya había avanzado una vez. */
-        if (avanzo) return; avanzo = true;
-        dirAnim = 'in'; paso = sig; pintarPaso(); window.scrollTo({ top: 0 });
-      } else enviar();
+    const habilita = () => {
+      const b = cont.querySelector('#sig');
+      if (b) b.disabled = !['desenlace', 'factor', 'volveria'].some(k => R[k]);
     };
-
     cont.querySelectorAll('.op').forEach(op => op.addEventListener('click', ev => {
-      ev.preventDefault();                       // mata el segundo clic sintético del radio
-      if (p.multi) {
-        /* Hasta 3, y el ORDEN importa: la primera marcada es la prioridad.
-           Volver a tocar una marcada la desmarca; con 3 puestas, la cuarta
-           no entra (se avisa en la nota, no con un regaño). */
-        const v = op.dataset.v;
-        let t = R.recompra_todas || [];
-        if (t.includes(v)) t = t.filter(x => x !== v);
-        else if (t.length < 3) t = [...t, v];
-        R.recompra_todas = t;
-        R.recompra = t[0] || undefined;          // la prioridad, para las tendencias
-        if (!R.recompra) delete R.recompra;
-        pintarPaso();                            // re-pinta para el badge 1ª y los estados
-        return;
-      }
-      cont.querySelectorAll('.op').forEach(o => o.classList.remove('on'));
+      ev.preventDefault();                        // mata el segundo clic sintético del radio
+      const g = op.dataset.g;
+      cont.querySelectorAll(`.op[data-g="${g}"]`).forEach(o => o.classList.remove('on'));
       op.classList.add('on');
-      R[p.k] = op.dataset.v;
-      if (p.cal) {
-        cont.querySelector('#cal-wrap').classList.remove('oculto');           // falta la calificación
-      } else if (p.txt) {
-        cont.querySelector('#txt-wrap').classList.remove('oculto');           // por si quiere contar
-        const b = cont.querySelector('#sig'); if (b) b.disabled = false;
-      } else {
-        setTimeout(avanzar, 280);                                             // nada más que pedir: sigue sola
+      R[g] = op.dataset.v;
+      if (g === 'desenlace') {
+        /* El "¿qué pesó?" existe solo para quien se fue con otro: a quien
+           canceló, preguntárselo es no haber leído su respuesta anterior. Si
+           cambia de opinión ya con un factor marcado, el factor se descarta
+           — un factor huérfano diría algo que la persona ya no dijo. */
+        const aplica = R.desenlace === 'otro_proveedor';
+        cont.querySelector('#factor-wrap').classList.toggle('oculto', !aplica);
+        if (!aplica) {
+          delete R.factor;
+          cont.querySelectorAll('.op[data-g="factor"]').forEach(o => o.classList.remove('on'));
+        }
       }
-    }));
-    cont.querySelectorAll('.cal button').forEach(b => b.addEventListener('click', () => {
-      cont.querySelectorAll('.cal button').forEach(x => x.classList.remove('on'));
-      b.classList.add('on');
-      R.motivo_cumplio = b.dataset.n;
-      setTimeout(avanzar, 280);
+      habilita();
     }));
     cont.querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => { R[t.dataset.txt] = t.value; }));
-    cont.querySelector('#sig')?.addEventListener('click', avanzar);
-    cont.querySelector('#atras')?.addEventListener('click', ev => { ev.preventDefault(); dirAnim = 'back'; paso--; pintarPaso(); });
-    cont.querySelector('#saltar')?.addEventListener('click', ev => { ev.preventDefault(); avanzar(); });
+    cont.querySelector('#sig')?.addEventListener('click', enviar);
     cont.querySelector('#soy-otro')?.addEventListener('click', ev => {
       ev.preventDefault();
       cont.querySelector('#soy-caja').classList.remove('oculto');
@@ -383,7 +309,7 @@
     const fijarQuien = () => {
       quien = (cont.querySelector('#soy-nombre').value || '').trim().replace(/\s+/g, ' ').slice(0, 80);
       R.respondente = quien;
-      pintarPaso();
+      pintarFormulario(datosOT);
     };
     cont.querySelector('#soy-ok')?.addEventListener('click', fijarQuien);
     cont.querySelector('#soy-nombre')?.addEventListener('keydown', ev => {
@@ -397,10 +323,13 @@
     const est = document.getElementById('est'), btn = document.getElementById('sig');
     /* Nada es obligatorio salvo dar UNA señal: obligar campos en una encuesta
        voluntaria es la forma más rápida de que la abandonen a media página. */
-    const dio = ['desenlace', 'factor', 'cercania', 'volveria'].some(k => R[k]);
+    // cinturón además del toggle de la UI: un factor sin "otro proveedor"
+    // diría algo que la persona ya no dijo
+    if (R.desenlace !== 'otro_proveedor') delete R.factor;
+    const dio = ['desenlace', 'factor', 'volveria'].some(k => R[k]);
     if (!dio) {
       est.className = 'estado mal';
-      est.textContent = 'Contesta al menos una pregunta y con eso nos ayudas — puedes regresar con ‹ Anterior.';
+      est.textContent = 'Marca al menos una respuesta y con eso nos ayudas.';
       return;
     }
     enviando = true;
