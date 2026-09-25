@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex" />
 <meta name="color-scheme" content="dark" />
 <meta name="theme-color" content="#121212" />
-<!-- LA PANTALLA NEGRA (8-ago, la vio César con el link de Arzate): esta hoja
+<!-- LA PANTALLA NEGRA (8-ago, la vio César con el link de un cliente): esta hoja
      de Google Fonts cargaba BLOQUEANDO el render. En el navegador embebido de
      WhatsApp con señal lenta, si fonts.googleapis.com tarda, la página entera
      se queda sin pintar — y en un teléfono en modo oscuro eso se ve NEGRO.
@@ -252,7 +252,7 @@ const demo = new URLSearchParams(location.search).has('demo');
 
 async function traer() {
   if (demo) {
-    return { ot: { folio_ot: 'OT-LW-2026-0155', estado: 'en_proceso', fecha_compromiso: new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10), cliente: 'Kato Gutierrez', empresa: '', piezas: 28, material: 'acero C16', tiene_acabado: true, updated_at: new Date().toISOString(),
+    return { ot: { folio_ot: 'OT-DEMO-0101', estado: 'en_proceso', fecha_compromiso: new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10), cliente: 'Cliente Demo', empresa: '', piezas: 28, material: 'acero C16', tiene_acabado: true, updated_at: new Date().toISOString(),
       notas: [ { t: 'Recibimos tu anticipo — tu material ya está apartado.', ts: new Date(Date.now() - 2 * 864e5).toISOString() }, { t: 'Tus piezas ya están en la mesa de corte, va quedando muy bien 🔥', ts: new Date(Date.now() - 36e5).toISOString() } ],
       piezas_lista: [ { d: 'Placa base 300×600 mm', n: 12 }, { d: 'Soporte en L cal. 16', n: 10 }, { d: 'Tapa perforada decorativa', n: 6 } ],
       piezas_listas: [ { k: 'Tapa perforada decorativa|6', n: 6 }, { k: 'Soporte en L cal. 16|10', n: 4 } ] },

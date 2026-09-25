@@ -323,7 +323,7 @@
        último índice, y el botón tiene que decirle "Enviar mis respuestas". */
     const ultimo = !P.slice(paso + 1).some(aplicaP);
     /* El saludo es para la PERSONA con la que se trató, no para la razón
-       social: "¿Cómo nos fue, Carlos?" — no "¿Cómo nos fue, Paran?" (César
+       social: "¿Cómo nos fue, <persona>?" — no "¿Cómo nos fue, <empresa>?" (César
        lo vio en la primera prueba). Sin nombre capturado, sin nombre: un
        saludo genérico bien puesto vale más que uno personalizado mal. */
     const contacto = (d.cliente || '').trim().split(' ')[0];
